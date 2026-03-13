@@ -1,95 +1,132 @@
-"use client";
-
-import { useState } from "react";
-import { FeedCard } from "@/components/student/FeedCard";
 import { ScoreWidget } from "@/components/student/ScoreWidget";
 import { FocusWidget } from "@/components/student/FocusWidget";
 import { HotSkillsWidget } from "@/components/student/HotSkillsWidget";
-import { Button } from "@/components/ui/button";
+import { getMarketFeed } from "@/lib/actions/feed";
+import { getSkillGapAnalysis, getHotSkills } from "@/lib/actions/skills";
+import { getUserId } from "@/lib/actions/userId";
+import FeedClient from "./FeedClient";
 
-const MOCK_FEED = [
-    {
-        id: 1,
-        title: "React 19 is officially out. Here is what changed.",
-        tag: "Frontend",
-        time: "2h ago",
-        company: "React Team"
-    },
-    {
-        id: 2,
-        title: "Next.js 15 introduces Partial Prerendering for hybrid rendering strategies.",
-        tag: "Frontend",
-        time: "4h ago",
-        company: "Vercel"
-    },
-    {
-        id: 3,
-        title: "GPT-5 training completed. API access rolling out to enterprise customers.",
-        tag: "AI",
-        time: "8h ago",
-        company: "OpenAI"
-    },
-    {
-        id: 4,
-        title: "Rust adoption growing 40% YoY in systems programming roles.",
-        tag: "Backend",
-        time: "1d ago",
-        company: "Stack Overflow"
-    },
-];
+export default async function FeedPage() {
+    const userId = await getUserId();
 
-const FILTER_TABS = ["All", "Frontend", "Backend", "AI"];
+    if (!userId) {
+        return (
+            <div className="flex items-center justify-center h-screen">
+                <p className="text-zinc-400">Please sign in to view your feed.</p>
+            </div>
+        );
+    }
 
-export default function FeedPage() {
-    const [activeFilter, setActiveFilter] = useState("All");
+    // Fetch live market data and user's skill analysis in parallel
+    const [initialFeed, analysis, hotSkillsList] = await Promise.all([
+        getMarketFeed(),
+        getSkillGapAnalysis(userId),
+        getHotSkills()
+    ]);
+
+    // 1. Calculate Score and Gaps
+    let overallScore = 0;
+    const focusItems: { id: string; text: string; completed: boolean }[] = [];
+
+    if (analysis.role) {
+        const requiredSkills = analysis.role.required_skills || {};
+        const verifiedSkills = analysis.verifiedSkills || [];
+
+        // Strip everything except a-z and 0-9 for maximum fuzzy matching
+        const normalize = (s: string) => s.toLowerCase().trim().replace(/[^a-z0-9]/g, '');
+
+        // Build the verified skills lookup with normalized keys
+        const verifiedLookup = new Map<string, number>();
+        verifiedSkills.forEach(skill => {
+            const skillNameRaw = skill.market_skills?.name || skill.skill_id;
+            const skillName = normalize(skillNameRaw);
+            const current = verifiedLookup.get(skillName) || 0;
+            if (skill.proficiency > current) {
+                verifiedLookup.set(skillName, skill.proficiency);
+            }
+        });
+
+        // Debug: Print the full student skills map so we can see what's available
+        console.log("═══ MARKET READINESS DEBUG ═══");
+        console.log("Role:", analysis.role.name);
+        console.log("Required Skills (raw):", JSON.stringify(requiredSkills));
+        console.log("Student Verified Skills Map:", Object.fromEntries(verifiedLookup));
+        console.log("Total verified skill entries from DB:", verifiedSkills.length);
+
+        // Fuzzy match: normalized exact → then bidirectional substring containment
+        const fuzzyLookup = (rawKey: string): { proficiency: number; matchedWith: string | null } => {
+            const key = normalize(rawKey);
+
+            // 1. Exact normalized match
+            if (verifiedLookup.has(key)) {
+                return { proficiency: verifiedLookup.get(key)!, matchedWith: `exact:${key}` };
+            }
+
+            // 2. Fuzzy substring: "postgresql".includes("postgres") or "postgres".includes("sql")
+            for (const [verifiedName, proficiency] of verifiedLookup) {
+                if (verifiedName.includes(key) || key.includes(verifiedName)) {
+                    return { proficiency, matchedWith: `fuzzy:${verifiedName}` };
+                }
+            }
+
+            return { proficiency: 0, matchedWith: null };
+        };
+
+        const reqEntries = Object.entries(requiredSkills);
+        const totalRequiredCount = reqEntries.length;
+        let totalProgressPct = 0;
+
+        reqEntries.forEach(([skillNameRaw, requiredLevel]: [string, any]) => {
+            const reqVal = Number(requiredLevel) || 100;
+            const { proficiency: studentVal, matchedWith } = fuzzyLookup(skillNameRaw);
+
+            console.log(
+                `COMPARING: "${normalize(skillNameRaw)}" (req: ${reqVal}) → ` +
+                `${matchedWith ? `✅ MATCH [${matchedWith}] prof=${studentVal}` : '❌ NO MATCH'}`
+            );
+
+            // Limit contribution up to the required amount
+            const displayStudentVal = Math.min(studentVal, reqVal);
+            const skillProgressPct = reqVal > 0 ? (displayStudentVal / reqVal) * 100 : 100;
+            totalProgressPct += skillProgressPct;
+
+            // Missing skills go to the Focus Widget
+            if (studentVal < reqVal) {
+                focusItems.push({
+                    id: skillNameRaw,
+                    text: `Master ${skillNameRaw}`,
+                    completed: false
+                });
+            }
+        });
+
+        if (totalRequiredCount > 0) {
+            overallScore = Math.round(totalProgressPct / totalRequiredCount);
+        }
+
+        console.log(`═══ FINAL SCORE: ${overallScore}% (${totalProgressPct.toFixed(1)} / ${totalRequiredCount} skills) ═══`);
+
+        // Sort gaps so we show the ones with 0 proficiency first (biggest gaps)
+        focusItems.sort((a, b) => {
+            const aVal = fuzzyLookup(a.id).proficiency;
+            const bVal = fuzzyLookup(b.id).proficiency;
+            return aVal - bVal;
+        });
+    } else {
+        console.warn("MarketReady Dashboard Error: No active Target Role found for student", userId);
+        console.warn("analysis.role is:", analysis.role);
+    }
 
     return (
         <div className="flex h-full gap-6">
-            {/* Main Feed Column */}
-            <div className="flex-1 space-y-6">
-                {/* Header */}
-                <div>
-                    <h1 className="mb-6 text-3xl font-bold text-white">Market Pulse</h1>
-
-                    {/* Filter Tabs */}
-                    <div className="flex gap-2">
-                        {FILTER_TABS.map((tab) => (
-                            <Button
-                                key={tab}
-                                variant={activeFilter === tab ? "default" : "ghost"}
-                                size="sm"
-                                onClick={() => setActiveFilter(tab)}
-                                className={
-                                    activeFilter === tab
-                                        ? "bg-cyan-400 text-black hover:bg-cyan-500"
-                                        : "text-gray-400 hover:text-white hover:bg-white/5"
-                                }
-                            >
-                                {tab}
-                            </Button>
-                        ))}
-                    </div>
-                </div>
-
-                {/* Feed Cards */}
-                <div className="space-y-4">
-                    {MOCK_FEED.map((item) => (
-                        <FeedCard
-                            key={item.id}
-                            title={item.title}
-                            tag={item.tag}
-                            time={item.time}
-                            company={item.company}
-                        />
-                    ))}
-                </div>
-            </div>
+            {/* Top-level Client Component handles filtering and rendering rows */}
+            <FeedClient initialFeed={initialFeed} />
 
             {/* Right Widgets Column */}
-            <div className="w-80 space-y-6">
-                <ScoreWidget />
-                <FocusWidget />
-                <HotSkillsWidget />
+            <div className="w-80 space-y-6 shrink-0">
+                <ScoreWidget score={overallScore} />
+                <FocusWidget items={focusItems.slice(0, 3)} /> {/* Show top 3 critical gaps */}
+                <HotSkillsWidget hotSkills={hotSkillsList} />
             </div>
         </div>
     );

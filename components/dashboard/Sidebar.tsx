@@ -10,19 +10,40 @@ import {
     Users,
     CheckSquare,
     Crosshair,
-    LogOut
+    LogOut,
+    type LucideIcon,
 } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { logout } from "@/lib/actions/auth";
 
+interface NavItem {
+    href: string;
+    label: string;
+    icon: LucideIcon;
+}
+
+const NAV_ITEMS: Record<string, NavItem[]> = {
+    student: [
+        { href: "/student/feed", label: "Market Feed", icon: LayoutDashboard },
+        { href: "/student/roadmap", label: "My Roadmap", icon: BookOpen },
+        { href: "/student/progress", label: "Skill Gap Analysis", icon: Target },
+        { href: "/student/saved", label: "Target Roles", icon: Crosshair },
+    ],
+    admin: [
+        { href: "/admin", label: "Overview", icon: BarChart },
+        { href: "/admin/posts", label: "Posts", icon: FileText },
+        { href: "/admin/analytics", label: "Analytics", icon: BarChart },
+    ],
+    mentor: [
+        { href: "/mentor", label: "Dashboard", icon: Users },
+        { href: "/mentor/verify", label: "Verify Skills", icon: CheckSquare },
+    ],
+};
+
 export function Sidebar({ role }: { role: "student" | "admin" | "mentor" }) {
     const pathname = usePathname();
 
-    const isActive = (path: string) => pathname === path;
-
-    const handleLogout = async () => {
-        await logout();
-    };
+    const items = NAV_ITEMS[role] || [];
 
     return (
         <div className="w-52 h-full bg-[#0a0a0a] border-r border-white/10 flex flex-col">
@@ -37,133 +58,46 @@ export function Sidebar({ role }: { role: "student" | "admin" | "mentor" }) {
 
                 {/* Navigation */}
                 <nav className="space-y-1">
-                    {role === "student" && (
-                        <>
+                    {items.map((item) => {
+                        const Icon = item.icon;
+                        const active = pathname === item.href;
+                        return (
                             <Link
-                                href="/student/feed"
-                                className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${isActive("/student/feed")
+                                key={item.href}
+                                href={item.href}
+                                className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${active
                                     ? "bg-cyan-400/10 text-cyan-400"
                                     : "text-gray-400 hover:text-white hover:bg-white/5"
                                     }`}
                             >
-                                <LayoutDashboard size={18} />
-                                <span>Market Feed</span>
+                                <Icon size={18} />
+                                <span>{item.label}</span>
                             </Link>
-                            <Link
-                                href="/student/roadmap"
-                                className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${isActive("/student/roadmap")
-                                    ? "bg-cyan-400/10 text-cyan-400"
-                                    : "text-gray-400 hover:text-white hover:bg-white/5"
-                                    }`}
-                            >
-                                <BookOpen size={18} />
-                                <span>My Roadmap</span>
-                            </Link>
-                            <Link
-                                href="/student/progress"
-                                className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${isActive("/student/progress")
-                                    ? "bg-cyan-400/10 text-cyan-400"
-                                    : "text-gray-400 hover:text-white hover:bg-white/5"
-                                    }`}
-                            >
-                                <Target size={18} />
-                                <span>Skill Gap Analysis</span>
-                            </Link>
-                            <Link
-                                href="/student/saved"
-                                className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${isActive("/student/saved")
-                                    ? "bg-cyan-400/10 text-cyan-400"
-                                    : "text-gray-400 hover:text-white hover:bg-white/5"
-                                    }`}
-                            >
-                                <Crosshair size={18} />
-                                <span>Target Roles</span>
-                            </Link>
-                        </>
-                    )}
-
-                    {role === "admin" && (
-                        <>
-                            <Link
-                                href="/admin"
-                                className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${isActive("/admin")
-                                    ? "bg-cyan-400/10 text-cyan-400"
-                                    : "text-gray-400 hover:text-white hover:bg-white/5"
-                                    }`}
-                            >
-                                <BarChart size={18} />
-                                <span>Overview</span>
-                            </Link>
-                            <Link
-                                href="/admin/posts"
-                                className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${isActive("/admin/posts")
-                                    ? "bg-cyan-400/10 text-cyan-400"
-                                    : "text-gray-400 hover:text-white hover:bg-white/5"
-                                    }`}
-                            >
-                                <FileText size={18} />
-                                <span>Posts</span>
-                            </Link>
-                            <Link
-                                href="/admin/analytics"
-                                className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${isActive("/admin/analytics")
-                                    ? "bg-cyan-400/10 text-cyan-400"
-                                    : "text-gray-400 hover:text-white hover:bg-white/5"
-                                    }`}
-                            >
-                                <BarChart size={18} />
-                                <span>Analytics</span>
-                            </Link>
-                        </>
-                    )}
-
-                    {role === "mentor" && (
-                        <>
-                            <Link
-                                href="/mentor"
-                                className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${isActive("/mentor")
-                                    ? "bg-cyan-400/10 text-cyan-400"
-                                    : "text-gray-400 hover:text-white hover:bg-white/5"
-                                    }`}
-                            >
-                                <Users size={18} />
-                                <span>Dashboard</span>
-                            </Link>
-                            <Link
-                                href="/mentor/verify"
-                                className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${isActive("/mentor/verify")
-                                    ? "bg-cyan-400/10 text-cyan-400"
-                                    : "text-gray-400 hover:text-white hover:bg-white/5"
-                                    }`}
-                            >
-                                <CheckSquare size={18} />
-                                <span>Verify Skills</span>
-                            </Link>
-                        </>
-                    )}
+                        );
+                    })}
                 </nav>
             </div>
 
             {/* Bottom User Profile Section */}
-            <div className="p-4 border-t border-white/10">
-                <div className="flex items-center gap-3 mb-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-cyan-400 text-black font-semibold">
+            <div className="p-4 border-t border-white/10 bg-black/40">
+                <div className="flex items-center gap-3">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-cyan-400 to-blue-500 text-black font-bold text-xs ring-2 ring-white/10">
                         PR
                     </div>
-                    <div className="flex-1 min-w-0">
+                    <div className="flex-1 min-w-0 overflow-hidden">
                         <p className="text-sm font-medium text-white truncate">Pratyush Raj</p>
-                        <p className="text-xs text-gray-400 capitalize">{role}</p>
+                        <p className="text-xs text-gray-500 truncate capitalize">{role}</p>
                     </div>
+                    <form action={logout}>
+                        <button
+                            type="submit"
+                            className="p-2 text-gray-400 hover:text-red-400 transition-colors"
+                            title="Logout"
+                        >
+                            <LogOut size={18} />
+                        </button>
+                    </form>
                 </div>
-                <form action={logout}>
-                    <button
-                        type="submit"
-                        className="flex w-full items-center gap-2 px-3 py-2 rounded-lg text-sm text-red-400 hover:bg-red-400/10 transition-colors"
-                    >
-                        <LogOut size={16} />
-                        <span>Logout</span>
-                    </button>
-                </form>
             </div>
         </div>
     );

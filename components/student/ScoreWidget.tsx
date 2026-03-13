@@ -1,9 +1,10 @@
 "use client";
 
-export function ScoreWidget() {
-    const score = 72;
+export function ScoreWidget({ score = 0 }: { score?: number }) {
     const circumference = 2 * Math.PI * 70; // radius = 70
-    const offset = circumference - (score / 100) * circumference;
+    // Ensure score is valid to prevent weird SVG offsets
+    const safeScore = Math.max(0, Math.min(100, isNaN(score) ? 0 : score));
+    const offset = circumference - (safeScore / 100) * circumference;
 
     return (
         <div className="rounded-lg border border-white/10 bg-zinc-900 p-6">
@@ -39,7 +40,7 @@ export function ScoreWidget() {
                     </svg>
                     {/* Score text */}
                     <div className="absolute inset-0 flex items-center justify-center">
-                        <span className="text-4xl font-bold text-white">{score}%</span>
+                        <span className="text-4xl font-bold text-white">{Math.round(safeScore)}%</span>
                     </div>
                 </div>
 
@@ -47,13 +48,8 @@ export function ScoreWidget() {
                     You are top <span className="text-cyan-400 font-semibold">15%</span> of your batch
                 </p>
 
-                {/* Market Trend Indicator */}
-                <p className="mt-2 text-center text-xs text-red-400 flex items-center justify-center gap-1">
-                    <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M14.707 10.293a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 111.414-1.414L9 12.586V5a1 1 0 012 0v7.586l2.293-2.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                    </svg>
-                    Market shifted -2% this week
-                </p>
+
+
             </div>
         </div>
     );

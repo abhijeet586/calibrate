@@ -1,22 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
-
 export function TerminalWindow() {
-    const [progress, setProgress] = useState(0);
-
-    useEffect(() => {
-        const interval = setInterval(() => {
-            setProgress((prev) => {
-                if (prev >= 70) {
-                    return 0;
-                }
-                return prev + 1;
-            });
-        }, 50); // Slightly slower for better visibility
-        return () => clearInterval(interval);
-    }, []);
-
     return (
         <div className="mx-auto w-full max-w-2xl overflow-hidden rounded-lg border border-white/10 bg-black/80 shadow-2xl backdrop-blur-sm">
             {/* Terminal Header */}
@@ -57,13 +41,10 @@ export function TerminalWindow() {
                     <div className="mt-6">
                         <div className="mb-2 flex justify-between text-gray-300">
                             <span>Market Readiness Score:</span>
-                            <span className="text-cyan-400 text-xl font-bold">{progress}%</span>
+                            <span className="text-cyan-400 text-xl font-bold terminal-score">70%</span>
                         </div>
                         <div className="h-2 overflow-hidden rounded-full bg-white/10">
-                            <div
-                                className="h-full bg-gradient-to-r from-cyan-400 to-cyan-500 transition-all duration-300"
-                                style={{ width: `${progress}%` }}
-                            />
+                            <div className="h-full bg-gradient-to-r from-cyan-400 to-cyan-500 terminal-progress-bar" />
                         </div>
                     </div>
 
@@ -73,6 +54,25 @@ export function TerminalWindow() {
                     </div>
                 </div>
             </div>
+
+            <style jsx>{`
+                .terminal-progress-bar {
+                    animation: progress-fill 3s ease-in-out infinite;
+                }
+                .terminal-score {
+                    animation: score-pulse 3s ease-in-out infinite;
+                }
+                @keyframes progress-fill {
+                    0% { width: 0%; }
+                    50% { width: 70%; }
+                    100% { width: 0%; }
+                }
+                @keyframes score-pulse {
+                    0% { opacity: 0.5; }
+                    50% { opacity: 1; }
+                    100% { opacity: 0.5; }
+                }
+            `}</style>
         </div>
     );
 }

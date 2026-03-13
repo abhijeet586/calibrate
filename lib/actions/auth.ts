@@ -33,7 +33,7 @@ export async function login(formData: FormData) {
     // Redirect based on role
     if (role === 'mentor') {
         redirect('/mentor')
-    } else if (role === 'admin') {
+    } else if (role === 'admin' || role === 'cdc_admin') {
         redirect('/admin')
     } else {
         redirect('/student/feed')

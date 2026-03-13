@@ -37,7 +37,7 @@ export async function GET(request: Request) {
             let redirectPath = '/student/feed';
             if (userRole === 'mentor') {
                 redirectPath = '/mentor';
-            } else if (userRole === 'admin') {
+            } else if (userRole === 'admin' || userRole === 'cdc_admin') {
                 redirectPath = '/admin';
             }
 

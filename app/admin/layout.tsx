@@ -21,8 +21,8 @@ export default async function AdminLayout({
         .eq("id", user.id)
         .single();
 
-    // Only allow admin users
-    if (profile?.role !== "admin") {
+    // Only allow admin users (supports both 'admin' and 'cdc_admin' roles)
+    if (profile?.role !== "admin" && profile?.role !== "cdc_admin") {
         redirect("/student/feed");
     }
 

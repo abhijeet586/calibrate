@@ -12,7 +12,8 @@ import {
   ArrowRight,
   ChevronRight,
   Circle,
-  Check
+  Check,
+  type LucideIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -33,6 +34,95 @@ const staggerContainer = {
     }
   }
 };
+
+interface Feature {
+  icon: LucideIcon;
+  iconColor: string;
+  bgColor: string;
+  title: string;
+  description: string;
+}
+
+const FEATURES: Feature[] = [
+  {
+    icon: Activity,
+    iconColor: "text-cyan-400",
+    bgColor: "bg-cyan-400/10",
+    title: "Real-time Feed",
+    description: "Live updates on industry trends, tech stacks, and hiring patterns from top companies.",
+  },
+  {
+    icon: Shield,
+    iconColor: "text-green-400",
+    bgColor: "bg-green-400/10",
+    title: "Mentor Verification",
+    description: "Industry experts validate your roadmap and ensure you're learning what actually matters.",
+  },
+  {
+    icon: Target,
+    iconColor: "text-purple-400",
+    bgColor: "bg-purple-400/10",
+    title: "Skill Tracker",
+    description: "Quantify your progress with precision metrics that align with real job requirements.",
+  },
+  {
+    icon: Zap,
+    iconColor: "text-yellow-400",
+    bgColor: "bg-yellow-400/10",
+    title: "Fast Learning Paths",
+    description: "Optimized curricula designed to get you job-ready in the shortest time possible.",
+  },
+  {
+    icon: TrendingUp,
+    iconColor: "text-blue-400",
+    bgColor: "bg-blue-400/10",
+    title: "Market Analytics",
+    description: "Data-driven insights showing which skills are trending and what companies are hiring for.",
+  },
+  {
+    icon: Users,
+    iconColor: "text-pink-400",
+    bgColor: "bg-pink-400/10",
+    title: "Peer Network",
+    description: "Connect with students and alumni who've successfully landed their dream roles.",
+  },
+];
+
+interface TimelineStep {
+  color: string;
+  borderColor: string;
+  title: string;
+  badgeText: string;
+  badgeClasses: string;
+  description: string;
+}
+
+const TIMELINE_STEPS: TimelineStep[] = [
+  {
+    color: "text-cyan-400",
+    borderColor: "border-cyan-400",
+    title: "Admin Updates",
+    badgeText: "Live",
+    badgeClasses: "border-cyan-400/30 bg-cyan-400/10 text-cyan-400",
+    description: "Faculty and administrators curate industry-relevant content and roadmaps based on current market demands.",
+  },
+  {
+    color: "text-green-400",
+    borderColor: "border-green-400",
+    title: "Mentor Roadmaps",
+    badgeText: "Verified",
+    badgeClasses: "border-green-400/30 bg-green-400/10 text-green-400",
+    description: "Industry mentors review and validate learning paths, ensuring they align with real-world job requirements.",
+  },
+  {
+    color: "text-purple-400",
+    borderColor: "border-purple-400",
+    title: "Student Action",
+    badgeText: "Active",
+    badgeClasses: "border-purple-400/30 bg-purple-400/10 text-purple-400",
+    description: "Students access personalized roadmaps, track progress, and build skills that matter to employers.",
+  },
+];
 
 export default function LandingPage() {
   return (
@@ -63,7 +153,7 @@ export default function LandingPage() {
               variants={fadeInUp}
               className="mb-6 text-5xl font-bold leading-tight md:text-7xl"
             >
-              Don't Just Graduate.
+              Don&apos;t Just Graduate.
               <br />
               <span className="bg-gradient-to-r from-cyan-400 to-cyan-500 bg-clip-text text-transparent">
                 Be Market Ready.
@@ -109,10 +199,10 @@ export default function LandingPage() {
             </motion.div>
           </motion.div>
         </div>
-      </section >
+      </section>
 
       {/* Features Section */}
-      < section className="py-20" >
+      <section className="py-20">
         <div className="mx-auto max-w-7xl px-6">
           <div className="mb-12 text-center">
             <h2 className="mb-4 text-4xl font-bold">
@@ -128,113 +218,31 @@ export default function LandingPage() {
 
           {/* Feature Grid */}
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {/* Feature 1 */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              className="group rounded-xl border border-white/10 bg-white/5 p-6 backdrop-blur-sm transition-all hover:border-cyan-400/30 hover:bg-white/10"
-            >
-              <div className="mb-4 inline-flex rounded-lg bg-cyan-400/10 p-3">
-                <Activity className="h-6 w-6 text-cyan-400" />
-              </div>
-              <h3 className="mb-2 text-xl font-semibold">Real-time Feed</h3>
-              <p className="text-sm text-gray-400">
-                Live updates on industry trends, tech stacks, and hiring patterns from top companies.
-              </p>
-            </motion.div>
-
-            {/* Feature 2 */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.1 }}
-              className="group rounded-xl border border-white/10 bg-white/5 p-6 backdrop-blur-sm transition-all hover:border-cyan-400/30 hover:bg-white/10"
-            >
-              <div className="mb-4 inline-flex rounded-lg bg-green-400/10 p-3">
-                <Shield className="h-6 w-6 text-green-400" />
-              </div>
-              <h3 className="mb-2 text-xl font-semibold">Mentor Verification</h3>
-              <p className="text-sm text-gray-400">
-                Industry experts validate your roadmap and ensure you're learning what actually matters.
-              </p>
-            </motion.div>
-
-            {/* Feature 3 */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.2 }}
-              className="group rounded-xl border border-white/10 bg-white/5 p-6 backdrop-blur-sm transition-all hover:border-cyan-400/30 hover:bg-white/10"
-            >
-              <div className="mb-4 inline-flex rounded-lg bg-purple-400/10 p-3">
-                <Target className="h-6 w-6 text-purple-400" />
-              </div>
-              <h3 className="mb-2 text-xl font-semibold">Skill Tracker</h3>
-              <p className="text-sm text-gray-400">
-                Quantify your progress with precision metrics that align with real job requirements.
-              </p>
-            </motion.div>
-
-            {/* Feature 4 */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.3 }}
-              className="group rounded-xl border border-white/10 bg-white/5 p-6 backdrop-blur-sm transition-all hover:border-cyan-400/30 hover:bg-white/10"
-            >
-              <div className="mb-4 inline-flex rounded-lg bg-yellow-400/10 p-3">
-                <Zap className="h-6 w-6 text-yellow-400" />
-              </div>
-              <h3 className="mb-2 text-xl font-semibold">Fast Learning Paths</h3>
-              <p className="text-sm text-gray-400">
-                Optimized curricula designed to get you job-ready in the shortest time possible.
-              </p>
-            </motion.div>
-
-            {/* Feature 5 */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.4 }}
-              className="group rounded-xl border border-white/10 bg-white/5 p-6 backdrop-blur-sm transition-all hover:border-cyan-400/30 hover:bg-white/10"
-            >
-              <div className="mb-4 inline-flex rounded-lg bg-blue-400/10 p-3">
-                <TrendingUp className="h-6 w-6 text-blue-400" />
-              </div>
-              <h3 className="mb-2 text-xl font-semibold">Market Analytics</h3>
-              <p className="text-sm text-gray-400">
-                Data-driven insights showing which skills are trending and what companies are hiring for.
-              </p>
-            </motion.div>
-
-            {/* Feature 6 */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.5 }}
-              className="group rounded-xl border border-white/10 bg-white/5 p-6 backdrop-blur-sm transition-all hover:border-cyan-400/30 hover:bg-white/10"
-            >
-              <div className="mb-4 inline-flex rounded-lg bg-pink-400/10 p-3">
-                <Users className="h-6 w-6 text-pink-400" />
-              </div>
-              <h3 className="mb-2 text-xl font-semibold">Peer Network</h3>
-              <p className="text-sm text-gray-400">
-                Connect with students and alumni who've successfully landed their dream roles.
-              </p>
-            </motion.div>
+            {FEATURES.map((feature, index) => {
+              const Icon = feature.icon;
+              return (
+                <motion.div
+                  key={feature.title}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: index * 0.1 }}
+                  className="group rounded-xl border border-white/10 bg-white/5 p-6 backdrop-blur-sm transition-all hover:border-cyan-400/30 hover:bg-white/10"
+                >
+                  <div className={`mb-4 inline-flex rounded-lg ${feature.bgColor} p-3`}>
+                    <Icon className={`h-6 w-6 ${feature.iconColor}`} />
+                  </div>
+                  <h3 className="mb-2 text-xl font-semibold">{feature.title}</h3>
+                  <p className="text-sm text-gray-400">{feature.description}</p>
+                </motion.div>
+              );
+            })}
           </div>
         </div>
-      </section >
-
+      </section>
 
       {/* How It Works Section */}
-      < section className="py-20" >
+      <section className="py-20">
         <div className="mx-auto max-w-7xl px-6">
           <div className="mb-16 text-center">
             <h2 className="mb-4 text-4xl font-bold">
@@ -253,93 +261,40 @@ export default function LandingPage() {
             {/* Vertical Line */}
             <div className="absolute left-[52px] top-12 bottom-12 w-px bg-gradient-to-b from-cyan-400/50 via-green-400/50 to-purple-400/50" />
 
-            {/* Step 1 - Admin Updates */}
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-              className="relative mb-24 flex items-start gap-8"
-            >
-              {/* Icon Circle - Outlined */}
-              <div className="relative z-10 flex h-[104px] w-[104px] flex-shrink-0 items-center justify-center bg-[#050505] rounded-full">
-                <div className="absolute inset-0 rounded-full border-[3px] border-cyan-400" />
-                <Circle className="h-10 w-10 text-cyan-400" strokeWidth={2.5} />
-                <Check className="absolute h-5 w-5 text-cyan-400" strokeWidth={3} />
-              </div>
-
-              {/* Content */}
-              <div className="flex-1 pt-6">
-                <div className="mb-3 flex items-center gap-3">
-                  <h3 className="text-2xl font-semibold text-white">Admin Updates</h3>
-                  <Badge className="border-cyan-400/30 bg-cyan-400/10 text-cyan-400 text-xs px-2 py-0.5">Live</Badge>
+            {TIMELINE_STEPS.map((step, index) => (
+              <motion.div
+                key={step.title}
+                initial={{ opacity: 0, x: -20 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: index * 0.2 }}
+                className={`relative flex items-start gap-8 ${index < TIMELINE_STEPS.length - 1 ? "mb-24" : ""}`}
+              >
+                {/* Icon Circle - Outlined */}
+                <div className="relative z-10 flex h-[104px] w-[104px] flex-shrink-0 items-center justify-center bg-[#050505] rounded-full">
+                  <div className={`absolute inset-0 rounded-full border-[3px] ${step.borderColor}`} />
+                  <Circle className={`h-10 w-10 ${step.color}`} strokeWidth={2.5} />
+                  <Check className={`absolute h-5 w-5 ${step.color}`} strokeWidth={3} />
                 </div>
-                <p className="text-base text-gray-400 leading-relaxed">
-                  Faculty and administrators curate industry-relevant content and roadmaps based on current market demands.
-                </p>
-              </div>
-            </motion.div>
 
-            {/* Step 2 - Mentor Roadmaps */}
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.2 }}
-              className="relative mb-24 flex items-start gap-8"
-            >
-              {/* Icon Circle - Outlined */}
-              <div className="relative z-10 flex h-[104px] w-[104px] flex-shrink-0 items-center justify-center bg-[#050505] rounded-full">
-                <div className="absolute inset-0 rounded-full border-[3px] border-green-400" />
-                <Circle className="h-10 w-10 text-green-400" strokeWidth={2.5} />
-                <Check className="absolute h-5 w-5 text-green-400" strokeWidth={3} />
-              </div>
-
-              {/* Content */}
-              <div className="flex-1 pt-6">
-                <div className="mb-3 flex items-center gap-3">
-                  <h3 className="text-2xl font-semibold text-white">Mentor Roadmaps</h3>
-                  <Badge className="border-green-400/30 bg-green-400/10 text-green-400 text-xs px-2 py-0.5">Verified</Badge>
+                {/* Content */}
+                <div className="flex-1 pt-6">
+                  <div className="mb-3 flex items-center gap-3">
+                    <h3 className="text-2xl font-semibold text-white">{step.title}</h3>
+                    <Badge className={`${step.badgeClasses} text-xs px-2 py-0.5`}>{step.badgeText}</Badge>
+                  </div>
+                  <p className="text-base text-gray-400 leading-relaxed">
+                    {step.description}
+                  </p>
                 </div>
-                <p className="text-base text-gray-400 leading-relaxed">
-                  Industry mentors review and validate learning paths, ensuring they align with real-world job requirements.
-                </p>
-              </div>
-            </motion.div>
-
-            {/* Step 3 - Student Action */}
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.4 }}
-              className="relative flex items-start gap-8"
-            >
-              {/* Icon Circle - Outlined */}
-              <div className="relative z-10 flex h-[104px] w-[104px] flex-shrink-0 items-center justify-center bg-[#050505] rounded-full">
-                <div className="absolute inset-0 rounded-full border-[3px] border-purple-400" />
-                <Circle className="h-10 w-10 text-purple-400" strokeWidth={2.5} />
-                <Check className="absolute h-5 w-5 text-purple-400" strokeWidth={3} />
-              </div>
-
-              {/* Content */}
-              <div className="flex-1 pt-6">
-                <div className="mb-3 flex items-center gap-3">
-                  <h3 className="text-2xl font-semibold text-white">Student Action</h3>
-                  <Badge className="border-purple-400/30 bg-purple-400/10 text-purple-400 text-xs px-2 py-0.5">Active</Badge>
-                </div>
-                <p className="text-base text-gray-400 leading-relaxed">
-                  Students access personalized roadmaps, track progress, and build skills that matter to employers.
-                </p>
-              </div>
-            </motion.div>
+              </motion.div>
+            ))}
           </div>
         </div>
-      </section >
-
-
+      </section>
 
       {/* Final CTA Section */}
-      < section className="py-20" >
+      <section className="py-20">
         <div className="mx-auto max-w-7xl px-6">
           <div className="rounded-2xl border border-white/10 bg-gradient-to-br from-cyan-500/10 to-purple-500/10 p-12 text-center backdrop-blur-sm">
             <h2 className="mb-4 text-4xl font-bold">
@@ -359,9 +314,9 @@ export default function LandingPage() {
             </Link>
           </div>
         </div>
-      </section >
+      </section>
 
       <Footer />
-    </div >
+    </div>
   );
 }
