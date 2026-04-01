@@ -184,3 +184,174 @@ export async function resolveRoadmapTask(progressId: string, newStatus: 'verifie
     revalidatePath("/student/roadmap");
     revalidatePath("/mentor");
 }
+
+// =============================================================================
+// Verify Skills Page — Data Types & Actions
+// =============================================================================
+
+export interface VerifySubmission {
+    id: string;
+    studentId: string;
+    studentName: string;
+    studentInitials: string;
+    taskTitle: string;
+    track: string;
+    skill: string;
+    skillId: string;
+    proofUrl: string;
+    instructions: string;
+    submittedTime: string;
+}
+
+/**
+ * Fetches all pending student_progress rows with rich joins for the Verify Skills page.
+ */
+export async function getVerifySkillsQueue(): Promise<VerifySubmission[]> {
+    const supabase = await createClient();
+
+    const { data, error } = await supabase
+        .from("student_progress")
+        .select(`
+            id,
+            student_id,
+            proof_link,
+            created_at,
+            skill_id,
+            users:student_id ( full_name ),
+            roadmap_items!inner (
+                task_instruction,
+                skill_id,
+                target_role_id,
+                target_roles ( name ),
+                market_skills:skill_id ( name )
+            )
+        `)
+        .eq("status", "pending")
+        .order("created_at", { ascending: false });
+
+    if (error) {
+        console.error("getVerifySkillsQueue Error:", error.message);
+        return [];
+    }
+
+    return (data || []).map((row: any) => {
+        const fullName: string = row.users?.full_name || "Unknown Student";
+        const initials = fullName
+            .split(" ")
+            .map((n: string) => n[0])
+            .join("")
+            .toUpperCase()
+            .slice(0, 2);
+
+        const ri = Array.isArray(row.roadmap_items) ? row.roadmap_items[0] : row.roadmap_items;
+        const taskInstruction: string = ri?.task_instruction || "Unknown Task";
+        const trackName: string = ri?.target_roles?.name || "General";
+        const skillName: string = ri?.market_skills?.name || "General Skill";
+        const skillId: string = ri?.skill_id || row.skill_id || "";
+
+        // Relative time
+        const diffMs = Date.now() - new Date(row.created_at || Date.now()).getTime();
+        const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+        const submittedTime =
+            diffHours < 1 ? "Just now" :
+                diffHours < 24 ? `${diffHours} hour${diffHours > 1 ? "s" : ""} ago` :
+                    `${Math.floor(diffHours / 24)} day${Math.floor(diffHours / 24) > 1 ? "s" : ""} ago`;
+
+        return {
+            id: row.id,
+            studentId: row.student_id,
+            studentName: fullName,
+            studentInitials: initials,
+            taskTitle: taskInstruction.length > 60 ? taskInstruction.slice(0, 60) + "…" : taskInstruction,
+            track: trackName,
+            skill: skillName,
+            skillId,
+            proofUrl: row.proof_link || "",
+            instructions: taskInstruction,
+            submittedTime,
+        };
+    });
+}
+
+/**
+ * Approves a submission: marks student_progress as 'verified' and upserts student_skills.
+ */
+export async function approveSubmission(progressId: string, studentId: string, skillId: string) {
+    const supabase = await createClient();
+
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+        throw new Error("Unauthorized");
+    }
+
+    // 1. Update student_progress status to 'verified'
+    const { error: updateError } = await supabase
+        .from("student_progress")
+        .update({
+            status: "verified",
+            mentor_feedback: "Approved by mentor.",
+        })
+        .eq("id", progressId);
+
+    if (updateError) {
+        console.error("approveSubmission update error:", updateError);
+        throw new Error(updateError.message);
+    }
+
+    // 2. Upsert student_skills (safety net alongside the DB trigger)
+    if (skillId) {
+        const { data: existingSkill } = await supabase
+            .from("student_skills")
+            .select("id")
+            .eq("student_id", studentId)
+            .eq("skill_id", skillId)
+            .maybeSingle();
+
+        if (existingSkill) {
+            await supabase
+                .from("student_skills")
+                .update({ proficiency: 100, verified_at: new Date().toISOString() })
+                .eq("id", existingSkill.id);
+        } else {
+            await supabase
+                .from("student_skills")
+                .insert({
+                    student_id: studentId,
+                    skill_id: skillId,
+                    proficiency: 100,
+                    verified_at: new Date().toISOString(),
+                });
+        }
+    }
+
+    revalidatePath("/mentor/verify");
+    revalidatePath("/dashboard");
+    revalidatePath("/student/roadmap");
+}
+
+/**
+ * Rejects a submission: marks student_progress as 'rejected' with optional feedback.
+ */
+export async function rejectSubmission(progressId: string, feedback?: string) {
+    const supabase = await createClient();
+
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+        throw new Error("Unauthorized");
+    }
+
+    const { error: updateError } = await supabase
+        .from("student_progress")
+        .update({
+            status: "rejected",
+            mentor_feedback: feedback || "Rejected by mentor.",
+        })
+        .eq("id", progressId);
+
+    if (updateError) {
+        console.error("rejectSubmission update error:", updateError);
+        throw new Error(updateError.message);
+    }
+
+    revalidatePath("/mentor/verify");
+}

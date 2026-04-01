@@ -1,10 +1,21 @@
-export default function VerifyPage() {
+import { getVerifySkillsQueue } from "@/lib/actions/mentor";
+import VerifySkillsClient from "./VerifySkillsClient";
+
+export default async function VerifySkillsPage() {
+    const submissions = await getVerifySkillsQueue();
+
+    // Derive unique track and skill lists from real data
+    const trackSet = new Set(submissions.map((s) => s.track));
+    const skillSet = new Set(submissions.map((s) => s.skill));
+
+    const tracks = ["All Tracks", ...Array.from(trackSet).sort()];
+    const skills = ["All Skills", ...Array.from(skillSet).sort()];
+
     return (
-        <div className="space-y-6">
-            <h1 className="text-2xl font-bold">Verification Queue</h1>
-            <div className="p-4 border rounded-lg bg-white shadow-sm">
-                <p>Skills pending verification will appear here.</p>
-            </div>
-        </div>
-    )
+        <VerifySkillsClient
+            submissions={submissions}
+            tracks={tracks}
+            skills={skills}
+        />
+    );
 }
