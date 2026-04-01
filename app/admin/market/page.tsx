@@ -9,8 +9,9 @@ import {
     TableRow,
 } from "@/components/ui/table";
 import { Radio, TrendingUp, Briefcase, Eye } from "lucide-react";
-import { getRecentBroadcasts } from "@/lib/actions/admin";
+import { getRecentBroadcasts, MarketUpdate } from "@/lib/actions/admin";
 import BroadcastFormClient from "./BroadcastFormClient";
+import DeleteBroadcastButton from "./DeleteBroadcastButton";
 
 // ─── Data Types & Mocks ────────────────────────────────────────
 
@@ -99,7 +100,7 @@ const getTrendColor = (trend: string) => {
 
 export default async function MarketIntelligencePage() {
     // Determine the recent live broadcasts directly from our server actions mapping
-    let recentBroadcasts = [];
+    let recentBroadcasts: MarketUpdate[] = [];
     try {
         recentBroadcasts = await getRecentBroadcasts();
     } catch (e) {
@@ -198,12 +199,13 @@ export default async function MarketIntelligencePage() {
                                 <TableHead className="text-zinc-400">Content Preview</TableHead>
                                 <TableHead className="text-zinc-400">Priority</TableHead>
                                 <TableHead className="text-zinc-400">Sent Date</TableHead>
+                                <TableHead className="text-zinc-400 text-right">Actions</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
                             {recentBroadcasts.length === 0 ? (
                                 <TableRow>
-                                    <TableCell colSpan={4} className="text-center text-zinc-500 py-8">
+                                    <TableCell colSpan={5} className="text-center text-zinc-500 py-8">
                                         No broadcasts sent yet. Use the form above to send your first alert.
                                     </TableCell>
                                 </TableRow>
@@ -226,6 +228,9 @@ export default async function MarketIntelligencePage() {
                                             {new Date(broadcast.created_at).toLocaleDateString(undefined, {
                                                 month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
                                             })}
+                                        </TableCell>
+                                        <TableCell className="text-right">
+                                            <DeleteBroadcastButton id={broadcast.id} />
                                         </TableCell>
                                     </TableRow>
                                 ))

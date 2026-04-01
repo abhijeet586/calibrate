@@ -74,7 +74,43 @@ export async function broadcastMarketUpdate(formData: FormData) {
     revalidatePath("/student/roadmap");
 }
 
+export async function cleanupExpiredBroadcasts() {
+    const supabase = await createClient();
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    
+    const { error } = await supabase
+        .from("market_updates")
+        .delete()
+        .lt("created_at", thirtyDaysAgo.toISOString());
+
+    if (error) {
+        console.error("Error cleaning up expired broadcasts:", error);
+    }
+}
+
+export async function deleteBroadcast(id: string) {
+    const supabase = await createClient();
+    await requireAdmin();
+
+    const { error } = await supabase
+        .from("market_updates")
+        .delete()
+        .eq("id", id);
+
+    if (error) {
+        console.error("Error deleting broadcast:", error);
+        throw new Error(error.message);
+    }
+
+    revalidatePath("/admin/market");
+    revalidatePath("/student/feed");
+    revalidatePath("/dashboard");
+}
+
 export async function getRecentBroadcasts() {
+    await cleanupExpiredBroadcasts();
+
     const supabase = await createClient();
 
     // Verify admin just in case, though usually server components handle authorization separately.
@@ -174,6 +210,63 @@ export async function getAdminTargetRoles(): Promise<AdminTargetRole[]> {
     } catch (err: any) {
         console.error("getAdminTargetRoles failed:", err?.message || err);
         return [];
+    }
+}
+
+export async function deleteTargetRole(targetRoleId: string) {
+    const supabase = await createClient();
+    await requireAdmin();
+
+    if (!targetRoleId) {
+        throw new Error("Missing required field: targetRoleId");
+    }
+
+    try {
+        // Step A: Fetch all ids from the roadmap_items table where target_role_id === targetRoleId
+        const { data: roadmapItems, error: itemsError } = await supabase
+            .from("roadmap_items")
+            .select("id")
+            .eq("target_role_id", targetRoleId);
+
+        if (itemsError) throw itemsError;
+
+        if (roadmapItems && roadmapItems.length > 0) {
+            const roadmapItemIds = roadmapItems.map(item => item.id);
+
+            // Step B: Delete all rows in the student_progress table where the roadmap_item_id matches
+            const { error: progressError } = await supabase
+                .from("student_progress")
+                .delete()
+                .in("roadmap_item_id", roadmapItemIds);
+
+            if (progressError) throw progressError;
+        }
+
+        // Step C: Delete all rows in the roadmap_items table where target_role_id === targetRoleId
+        const { error: deleteItemsError } = await supabase
+            .from("roadmap_items")
+            .delete()
+            .eq("target_role_id", targetRoleId);
+
+        if (deleteItemsError) throw deleteItemsError;
+
+        // Step D: Delete the actual track in the target_roles table
+        const { error: deleteRoleError } = await supabase
+            .from("target_roles")
+            .delete()
+            .eq("id", targetRoleId);
+
+        if (deleteRoleError) throw deleteRoleError;
+
+        // 4. State & Cache Sync
+        revalidatePath("/admin/tracks");
+        revalidatePath("/admin/track-ops");
+        revalidatePath("/student/roadmap");
+        revalidatePath("/dashboard");
+
+    } catch (error: any) {
+        console.error("Error deleting target role:", error);
+        throw new Error(error.message || "Failed to delete target role");
     }
 }
 
