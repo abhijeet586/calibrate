@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { createTargetRole } from "@/lib/actions/admin";
+import { createTargetRole, deleteTargetRole } from "@/lib/actions/admin";
 import { AdminTargetRole } from "@/lib/actions/admin";
-import { Plus, Loader2, AlertCircle, Sparkles } from "lucide-react";
+import { Plus, Loader2, AlertCircle, Sparkles, Trash2 } from "lucide-react";
 
 interface AdminTracksClientProps {
     initialRoles: AdminTargetRole[];
@@ -14,6 +14,27 @@ export default function AdminTracksClient({ initialRoles }: AdminTracksClientPro
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState<string | null>(null);
+    const [deletingId, setDeletingId] = useState<string | null>(null);
+
+    const handleDelete = async (id: string, name: string) => {
+        if (!window.confirm(`Are you sure? This will delete all associated roadmap tasks and student progress for the track "${name}".`)) {
+            return;
+        }
+
+        setDeletingId(id);
+        setError(null);
+        setSuccess(null);
+
+        try {
+            await deleteTargetRole(id);
+            setSuccess(`Track "${name}" deleted successfully!`);
+            window.location.reload();
+        } catch (err: any) {
+            setError(err.message || "Failed to delete track");
+        } finally {
+            setDeletingId(null);
+        }
+    };
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
@@ -159,6 +180,7 @@ export default function AdminTracksClient({ initialRoles }: AdminTracksClientPro
                                     <th className="px-6 py-4 text-xs font-medium text-zinc-400 uppercase tracking-wide">Demand</th>
                                     <th className="px-6 py-4 text-xs font-medium text-zinc-400 uppercase tracking-wide">Required Skills</th>
                                     <th className="px-6 py-4 text-xs font-medium text-zinc-400 uppercase tracking-wide">Created</th>
+                                    <th className="px-6 py-4 text-xs font-medium text-zinc-400 uppercase tracking-wide">Actions</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-zinc-800">
@@ -189,6 +211,20 @@ export default function AdminTracksClient({ initialRoles }: AdminTracksClientPro
                                         </td>
                                         <td className="px-6 py-4 text-sm text-zinc-500 whitespace-nowrap">
                                             {new Date(role.created_at).toLocaleDateString()}
+                                        </td>
+                                        <td className="px-6 py-4 text-right">
+                                            <button
+                                                onClick={() => handleDelete(role.id, role.name)}
+                                                disabled={deletingId === role.id}
+                                                className="p-2 text-zinc-500 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-all disabled:opacity-50"
+                                                title="Delete Track"
+                                            >
+                                                {deletingId === role.id ? (
+                                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                                ) : (
+                                                    <Trash2 className="w-4 h-4" />
+                                                )}
+                                            </button>
                                         </td>
                                     </tr>
                                 ))}
