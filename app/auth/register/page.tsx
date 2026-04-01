@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 export default function RegisterPage() {
     return (
@@ -23,18 +22,6 @@ export default function RegisterPage() {
                         <div className="space-y-2">
                             <Label htmlFor="email">Email</Label>
                             <Input id="email" name="email" type="email" required />
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="role">I am a...</Label>
-                            <Select name="role" required>
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Select a role" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="student">Student</SelectItem>
-                                    <SelectItem value="mentor">Mentor</SelectItem>
-                                </SelectContent>
-                            </Select>
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="password">Password</Label>

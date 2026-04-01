@@ -27,7 +27,7 @@ export default async function AdminLayout({
     }
 
     return (
-        <div className="flex h-screen bg-zinc-950 overflow-hidden">
+        <div className="flex min-h-screen bg-zinc-950 overflow-hidden">
             <AdminSidebar />
             <div className="flex-1 flex flex-col overflow-hidden">
                 <AdminHeader />

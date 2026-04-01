@@ -33,7 +33,7 @@ export function AdminSidebar() {
     const pathname = usePathname();
 
     return (
-        <div className="flex h-screen w-64 flex-col border-r border-zinc-800 bg-zinc-950">
+        <div className="flex min-h-screen w-64 flex-col border-r border-zinc-800 bg-zinc-950">
             {/* Header */}
             <div className="border-b border-zinc-800 p-4">
                 <div className="flex items-center gap-3">

@@ -71,7 +71,7 @@ export async function signup(formData: FormData) {
     const email = formData.get('email') as string
     const password = formData.get('password') as string
     const fullName = formData.get('fullName') as string
-    const role = formData.get('role') as string
+    const role = 'student'
 
     const { data, error } = await supabase.auth.signUp({
         email,
@@ -88,7 +88,7 @@ export async function signup(formData: FormData) {
     }
 
     if (data.user) {
-        // Create profile
+        // Create profile with hardcoded student role
         const { error: profileError } = await supabase
             .from('profiles')
             .insert({
@@ -101,7 +101,20 @@ export async function signup(formData: FormData) {
         if (profileError) {
             console.error('Error creating profile:', profileError)
         }
+
+        // Also insert into users table (used by other parts of the app)
+        const { error: userError } = await supabase
+            .from('users')
+            .insert({
+                id: data.user.id,
+                full_name: fullName,
+                role: role,
+            })
+
+        if (userError) {
+            console.error('Error creating user:', userError)
+        }
     }
 
-    redirect('/auth/login?message=Account created! Please check your email to verify.')
+    redirect('/student/feed')
 }
