@@ -19,7 +19,7 @@ export default async function AdminLayout({
         .from("profiles")
         .select("role")
         .eq("id", user.id)
-        .single();
+        .maybeSingle();
 
     // Only allow admin users (supports both 'admin' and 'cdc_admin' roles)
     if (profile?.role !== "admin" && profile?.role !== "cdc_admin") {

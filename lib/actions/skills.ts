@@ -27,98 +27,101 @@ export interface SkillGapAnalysis {
 }
 
 export async function getSkillGapAnalysis(studentId: string): Promise<SkillGapAnalysis> {
-    const supabase = await createClient();
+    try {
+        const supabase = await createClient();
 
-    // 1. Fetch the student's active role from student_target_roles, then target_roles
-    const { data: studentRoles, error: rolesError } = await supabase
-        .from("student_target_roles")
-        .select(`
-      role_id,
-      target_roles (
-        id,
-        name,
-        required_skills,
-        market_demand_score
-      )
-    `)
-        .eq("student_id", studentId)
-        .limit(1)
-        .single();
-
-    if (rolesError && rolesError.code !== 'PGRST116') { // PGRST116 is no rows returned
-        console.error("Error fetching target roles:", rolesError);
-        throw new Error(rolesError.message);
-    }
-
-    console.log("DB Role Fetch:", studentRoles);
-
-    // Defensive mapping for related data which can sometimes be returned as an array by PostgREST
-    let role: TargetRole | null = null;
-    if (studentRoles?.target_roles) {
-        if (Array.isArray(studentRoles.target_roles)) {
-            role = studentRoles.target_roles[0] as unknown as TargetRole;
-        } else {
-            role = studentRoles.target_roles as unknown as TargetRole;
-        }
-    }
-
-    // 2. Fetch the student's verified skills
-    const { data: verifiedSkills, error: skillsError } = await supabase
-        .from("student_skills")
-        .select(`
-      id,
-      skill_id,
-      proficiency,
-      verified_at,
-      market_skills (
-        name,
-        category
-      )
-    `)
-        .eq("student_id", studentId)
-        .not("verified_at", "is", null);
-
-    if (skillsError) {
-        console.error("Error fetching student skills:", skillsError);
-        throw new Error(skillsError.message);
-    }
-
-    // 3. Fetch verified roadmap tasks to complement explicit skills
-    const { data: verifiedProgress } = await supabase
-        .from("student_progress")
-        .select(`
+        // 1. Fetch the student's active role from student_target_roles, then target_roles
+        const { data: studentRoles, error: rolesError } = await supabase
+            .from("student_target_roles")
+            .select(`
+          role_id,
+          target_roles (
             id,
-            status,
-            roadmap_items (
-                skill_id,
-                market_skills:skill_id (
-                    name,
-                    category
-                )
-            )
+            name,
+            required_skills,
+            market_demand_score
+          )
         `)
-        .eq("student_id", studentId)
-        .eq("status", "verified")
-        .not("roadmap_items.skill_id", "is", null);
+            .eq("student_id", studentId)
+            .limit(1)
+            .maybeSingle();
 
-    // Merge verified progress into our verifiedSkills array for the math engines
-    const progressAsSkills = (verifiedProgress || [])
-        .filter((p: any) => p.roadmap_items?.skill_id)
-        .map((p: any) => ({
-            id: p.id,
-            skill_id: p.roadmap_items.skill_id,
-            proficiency: 100,
-            verified_at: new Date().toISOString(), // Use now as proxy
-            market_skills: p.roadmap_items.market_skills
-        }));
+        if (rolesError && rolesError.code !== 'PGRST116') {
+            console.error("Error fetching target roles:", rolesError);
+        }
 
-    return {
-        role,
-        verifiedSkills: [
-            ...((verifiedSkills || []) as unknown as StudentSkill[]),
-            ...progressAsSkills as unknown as StudentSkill[]
-        ]
-    };
+        // Defensive mapping for related data which can sometimes be returned as an array by PostgREST
+        let role: TargetRole | null = null;
+        if (studentRoles?.target_roles) {
+            if (Array.isArray(studentRoles.target_roles)) {
+                role = studentRoles.target_roles[0] as unknown as TargetRole;
+            } else {
+                role = studentRoles.target_roles as unknown as TargetRole;
+            }
+        }
+
+        // 2. Fetch the student's verified skills
+        const { data: verifiedSkills, error: skillsError } = await supabase
+            .from("student_skills")
+            .select(`
+          id,
+          skill_id,
+          proficiency,
+          verified_at,
+          market_skills (
+            name,
+            category
+          )
+        `)
+            .eq("student_id", studentId)
+            .not("verified_at", "is", null);
+
+        if (skillsError) {
+            console.error("Error fetching student skills:", skillsError);
+        }
+
+        // 3. Fetch verified roadmap tasks to complement explicit skills
+        const { data: verifiedProgress } = await supabase
+            .from("student_progress")
+            .select(`
+                id,
+                status,
+                roadmap_items (
+                    skill_id,
+                    market_skills:skill_id (
+                        name,
+                        category
+                    )
+                )
+            `)
+            .eq("student_id", studentId)
+            .eq("status", "verified");
+
+        // Merge verified progress into our verifiedSkills array for the math engines
+        const progressAsSkills = (verifiedProgress || [])
+            .filter((p: any) => p.roadmap_items?.skill_id)
+            .map((p: any) => ({
+                id: p.id,
+                skill_id: p.roadmap_items.skill_id,
+                proficiency: 100,
+                verified_at: new Date().toISOString(),
+                market_skills: p.roadmap_items.market_skills
+            }));
+
+        return {
+            role,
+            verifiedSkills: [
+                ...((verifiedSkills || []) as unknown as StudentSkill[]),
+                ...progressAsSkills as unknown as StudentSkill[]
+            ]
+        };
+    } catch (err) {
+        console.error("Exception in getSkillGapAnalysis:", err);
+        return {
+            role: null,
+            verifiedSkills: []
+        };
+    }
 }
 
 export async function submitSkillForVerification(skillId: string, proofUrl: string) {

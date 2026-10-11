@@ -30,19 +30,24 @@ export interface StudentTargetRole {
 }
 
 export async function getAllRolesForStudent() {
-    const supabase = await createClient();
+    try {
+        const supabase = await createClient();
 
-    const { data, error } = await supabase
-        .from("target_roles")
-        .select("id, name, required_skills, market_demand_score")
-        .order("market_demand_score", { ascending: false });
+        const { data, error } = await supabase
+            .from("target_roles")
+            .select("id, name, required_skills, market_demand_score")
+            .order("market_demand_score", { ascending: false });
 
-    if (error) {
-        console.error("Error fetching roles for student:", error);
-        throw new Error(error.message);
+        if (error) {
+            console.error("Error fetching roles for student:", error);
+            return [];
+        }
+
+        return (data || []) as StudentTargetRole[];
+    } catch (err) {
+        console.error("Exception fetching roles for student:", err);
+        return [];
     }
-
-    return (data || []) as StudentTargetRole[];
 }
 
 export async function assignTargetRole(roleId: string) {

@@ -18,10 +18,10 @@ export default async function DashboardLayout({
         .from("profiles")
         .select("role")
         .eq("id", user.id)
-        .single();
+        .maybeSingle();
 
     // Fallback to student if role is missing
-    const role = profile?.role || "student";
+    const role = (profile?.role as "student" | "admin" | "mentor") || "student";
 
     return <Shell role={role}>{children}</Shell>;
 }

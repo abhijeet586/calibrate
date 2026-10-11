@@ -8,8 +8,26 @@ import { Target, Lightbulb } from 'lucide-react';
 export const dynamic = "force-dynamic";
 
 export default async function RoadmapPage() {
-    // 1. Get the current user ID natively on the server
-    const studentId = await getUserId();
+    let studentId: string | undefined;
+    let currentRoleId: string | null = null;
+    let roles: any[] = [];
+    let items: any[] = [];
+    let trackName = "Calibrate Cloud";
+
+    try {
+        studentId = await getUserId();
+        if (studentId) {
+            currentRoleId = await getStudentCurrentRole();
+            roles = await getAllRolesForStudent();
+            const activeTrack = roles.find(r => r.id === currentRoleId);
+            if (activeTrack) {
+                trackName = activeTrack.name;
+            }
+            items = await getStudentRoadmap(studentId, currentRoleId);
+        }
+    } catch (err) {
+        console.error("Error loading roadmap data:", err);
+    }
 
     if (!studentId) {
         return (
@@ -21,15 +39,6 @@ export default async function RoadmapPage() {
             </div>
         );
     }
-
-    // 2. Fetch the active role dynamically
-    const currentRoleId = await getStudentCurrentRole();
-    const roles = await getAllRolesForStudent();
-    const activeTrack = roles.find(r => r.id === currentRoleId);
-    const trackName = activeTrack ? activeTrack.name : "Calibrate Cloud";
-
-    // 3. Fetch the realtime items for this student and this track
-    const items = await getStudentRoadmap(studentId, currentRoleId);
 
     // 4. Handle Empty State
     if (!items || items.length === 0) {

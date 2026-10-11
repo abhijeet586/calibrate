@@ -41,20 +41,26 @@ export async function middleware(request: NextRequest) {
     }
 
     // ─── 2. Role Retrieval ───
-    // Fetch the user's role from the public.users table
-    const { data: userData, error: userError } = await supabase
+    // Fetch the user's role from public.users (or fallback to profiles)
+    let userRole = "student";
+    const { data: userData } = await supabase
         .from("users")
         .select("role")
         .eq("id", user.id)
-        .single();
+        .maybeSingle();
 
-    if (userError || !userData) {
-        console.error("RBAC Middleware: Failed to fetch user role", userError);
-        // If we can't determine the role, redirect to login as a safety measure
-        return NextResponse.redirect(new URL("/auth/login", request.url));
+    if (userData?.role) {
+        userRole = userData.role;
+    } else {
+        const { data: profileData } = await supabase
+            .from("profiles")
+            .select("role")
+            .eq("id", user.id)
+            .maybeSingle();
+        if (profileData?.role) {
+            userRole = profileData.role;
+        }
     }
-
-    const userRole = userData.role as string; // 'student' | 'mentor' | 'admin' | 'cdc_admin'
 
     // ─── 3. Route Protection Rules ───
     // Check if the current path belongs to the user's allowed route prefix

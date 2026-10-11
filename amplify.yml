@@ -6,7 +6,7 @@ frontend:
         - npm ci --cache .npm --prefer-offline || npm install
     build:
       commands:
-        - env | grep -e NEXT_PUBLIC_ -e APP_AWS_ >> .env.production
+        - env | grep -e NEXT_PUBLIC_ -e APP_AWS_ -e SUPABASE_ >> .env.production
         - npm run build
   artifacts:
     baseDirectory: .next
