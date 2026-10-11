@@ -139,7 +139,7 @@ export async function submitRoadmapProof(roadmapItemId: string, proofUrl: string
         // Update existing row to pending with the proof link
         const { error } = await supabase
             .from("student_progress")
-            .update({ status: "pending", proof_link: proofUrl, skill_id })
+            .update({ status: "pending", proof_link: proofUrl })
             .eq("id", existingProgress.id);
         if (error) {
             console.error("❌ SUPABASE UPDATE ERROR (student_progress):", error);
@@ -149,18 +149,17 @@ export async function submitRoadmapProof(roadmapItemId: string, proofUrl: string
         }
     } else {
         // Insert new row as pending
-        console.log("🚀 ATTEMPTING INSERT:", { student_id: user.id, roadmap_item_id: roadmapItemId, skill_id: skill_id });
+        console.log("🚀 ATTEMPTING INSERT:", { student_id: user.id, roadmap_item_id: roadmapItemId });
         const { error } = await supabase
             .from("student_progress")
             .insert({
                 student_id: user.id,
                 roadmap_item_id: roadmapItemId,
-                skill_id: skill_id,
                 status: "pending",
                 proof_link: proofUrl,
             });
         if (error) {
-            console.error("❌ SUPABASE INSERT ERROR (student_progress):", error); // LOOK AT YOUR VS CODE TERMINAL FOR THIS
+            console.error("❌ SUPABASE INSERT ERROR (student_progress):", error);
             throw new Error(error.message);
         } else {
             console.log("✅ INSERT SUCCESSFUL");

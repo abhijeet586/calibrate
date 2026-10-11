@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Inbox } from "lucide-react";
 import { FeedItem } from "@/lib/actions/feed";
 
-const FILTER_TABS = ["All", "Frontend", "Backend", "AI", "General"];
+const FILTER_TABS = ["All", "Frontend", "Backend", "AI", "Cloud", "General"];
 
 // Helper to format timestamps to relative time strings
 function timeAgo(dateString: string) {
@@ -28,14 +28,25 @@ function timeAgo(dateString: string) {
 export default function FeedClient({ initialFeed }: { initialFeed: FeedItem[] }) {
     const [activeFilter, setActiveFilter] = useState("All");
 
-    // Filter items based on the active tab (matching by category from DB)
+    // Filter items based on the active tab (matching by category from DB or keywords)
     const filteredFeed = initialFeed.filter(item => {
         if (activeFilter === "All") return true;
-        // The DB might have "High", "Medium", "Low" priority as "category", or tracks like "Full Stack". 
-        // We do a loose match or string inclusion.
-        return item.category?.toLowerCase() === activeFilter.toLowerCase() ||
-            item.title.toLowerCase().includes(activeFilter.toLowerCase()) ||
-            item.content.toLowerCase().includes(activeFilter.toLowerCase());
+        const filterLower = activeFilter.toLowerCase();
+        const catLower = (item.category || "").toLowerCase();
+        const titleLower = item.title.toLowerCase();
+        const contentLower = item.content.toLowerCase();
+
+        if (filterLower === "general") {
+            return catLower === "general" ||
+                catLower === "policy" ||
+                catLower === "hiring trend" ||
+                titleLower.includes("placement") ||
+                titleLower.includes("guideline");
+        }
+
+        return catLower === filterLower ||
+            titleLower.includes(filterLower) ||
+            contentLower.includes(filterLower);
     });
 
     return (

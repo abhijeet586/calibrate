@@ -142,3 +142,41 @@ WHERE p.email IN ('student@calibrate.edu', 'abhijeet@calibrate.edu')
   AND tr.name = 'Cloud Solutions Architect'
 ON CONFLICT DO NOTHING;
 
+-- 5. Permissive policies for market_updates
+DROP POLICY IF EXISTS "Public read market_updates" ON public.market_updates;
+CREATE POLICY "Public read market_updates" ON public.market_updates FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Allow write market_updates" ON public.market_updates;
+CREATE POLICY "Allow write market_updates" ON public.market_updates FOR ALL USING (true) WITH CHECK (true);
+
+-- 6. Seed Market Updates Across Categories (Frontend, Backend, AI, Cloud, General)
+INSERT INTO public.market_updates (title, content, category)
+VALUES 
+(
+    'Next.js 16 & React 19 Server Actions Lead Frontend Demands',
+    'Campus recruiters and enterprise tech firms report a 42% increase in hiring evaluations focusing on React 19 Server Components, Streaming SSR, and TypeScript UI architectures.',
+    'Frontend'
+),
+(
+    'Microservices & Distributed Systems Mastery in High Demand',
+    'Top cloud employers are screening candidates on high-throughput REST/gRPC backend APIs, PostgreSQL indexing optimization, and Dockerized microservice architecture.',
+    'Backend'
+),
+(
+    'Generative AI Orchestration & Vector Search Standard in 2026',
+    'Engineering teams now expect new college graduates to possess hands-on familiarity with LLM integrations, RAG architectures, and AWS Bedrock / OpenAI API orchestration.',
+    'AI'
+),
+(
+    'Enterprise Shift Toward Multi-Tier AWS Architectures & VPCs',
+    'AWS Cloud Architect roles require demonstrable proof-of-work in Amazon S3 Evidence Vaults, IAM least-privilege policies, and CloudWatch telemetry pipelines.',
+    'Cloud'
+),
+(
+    'CDC Placement Guideline: Proof-of-Work Portfolios Mandatory',
+    'Campus recruitment drives now mandate live deployed cloud applications and verified GitHub proof-of-work submissions over static resumes.',
+    'General'
+)
+ON CONFLICT DO NOTHING;
+
+
