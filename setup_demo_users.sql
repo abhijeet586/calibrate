@@ -70,3 +70,64 @@ WHERE email IN ('student@calibrate.edu', 'abhijeet@calibrate.edu');
 UPDATE public.users 
 SET role = 'student', full_name = 'Abhijeet Senapati' 
 WHERE email IN ('student@calibrate.edu', 'abhijeet@calibrate.edu');
+
+-- 3. Seed Curriculum Roadmap Milestones for Career Tracks
+INSERT INTO public.roadmap_items (target_role_id, skill_id, instruction, resource_link)
+SELECT 
+    tr.id,
+    ms.id,
+    'Deploy Multi-Tier AWS Architecture with VPC, Subnets, and S3 Evidence Vault',
+    'https://docs.aws.amazon.com/vpc/latest/userguide/what-is-amazon-vpc.html'
+FROM public.target_roles tr, public.market_skills ms
+WHERE tr.name = 'Cloud Solutions Architect' AND ms.name = 'AWS Cloud Architecture'
+ON CONFLICT DO NOTHING;
+
+INSERT INTO public.roadmap_items (target_role_id, skill_id, instruction, resource_link)
+SELECT 
+    tr.id,
+    ms.id,
+    'Containerize Microservices with Docker and Deploy to AWS ECS/EKS Cluster',
+    'https://docs.docker.com/get-started/'
+FROM public.target_roles tr, public.market_skills ms
+WHERE tr.name = 'Cloud Solutions Architect' AND ms.name = 'Docker & Kubernetes'
+ON CONFLICT DO NOTHING;
+
+INSERT INTO public.roadmap_items (target_role_id, skill_id, instruction, resource_link)
+SELECT 
+    tr.id,
+    ms.id,
+    'Architect Event-Driven Decoupled Pipelines with AWS Lambda, API Gateway & SNS',
+    'https://aws.amazon.com/serverless/'
+FROM public.target_roles tr, public.market_skills ms
+WHERE tr.name = 'Cloud Solutions Architect' AND ms.name = 'System Design & Microservices'
+ON CONFLICT DO NOTHING;
+
+INSERT INTO public.roadmap_items (target_role_id, skill_id, instruction, resource_link)
+SELECT 
+    tr.id,
+    ms.id,
+    'Establish Automated CloudWatch Telemetry and SNS Alert Monitoring',
+    'https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/WhatIsCloudWatch.html'
+FROM public.target_roles tr, public.market_skills ms
+WHERE tr.name = 'Cloud Solutions Architect' AND ms.name = 'CI/CD & Infrastructure as Code'
+ON CONFLICT DO NOTHING;
+
+INSERT INTO public.roadmap_items (target_role_id, skill_id, instruction, resource_link)
+SELECT 
+    tr.id,
+    ms.id,
+    'Build Automated CI/CD GitHub Actions Workflow for AWS Amplify & S3 Deployments',
+    'https://docs.github.com/actions'
+FROM public.target_roles tr, public.market_skills ms
+WHERE tr.name = 'DevOps & Platform Engineer' AND ms.name = 'CI/CD & Infrastructure as Code'
+ON CONFLICT DO NOTHING;
+
+INSERT INTO public.roadmap_items (target_role_id, skill_id, instruction, resource_link)
+SELECT 
+    tr.id,
+    ms.id,
+    'Build Serverless Next.js 16 SSR Platform with React 19 and Tailwind CSS',
+    'https://nextjs.org/docs'
+FROM public.target_roles tr, public.market_skills ms
+WHERE tr.name = 'Full-Stack Cloud Engineer' AND ms.name = 'TypeScript & Next.js'
+ON CONFLICT DO NOTHING;
