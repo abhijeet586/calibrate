@@ -2,6 +2,8 @@ import { getAllRolesForStudent, getStudentCurrentRole } from "@/lib/actions/stud
 import StudentRolesClient from "./StudentRolesClient";
 import { Compass } from "lucide-react";
 
+export const dynamic = "force-dynamic";
+
 export default async function StudentRolesPage() {
     const [roles, currentRoleId] = await Promise.all([
         getAllRolesForStudent(),

@@ -27,49 +27,82 @@ export interface RoadmapItem {
 export async function getStudentRoadmap(studentId: string, currentRoleId?: string | null) {
     const supabase = await createClient();
 
-    let query = supabase
-        .from("roadmap_items")
-        .select(`
-      id,
-      roadmap_id,
-      target_role_id,
-      related_market_update_id,
-      task_instruction,
-      resource_link,
-      is_verified_task,
-      roadmaps (
-        id,
-        title,
-        mentor_id
-      ),
-      skill_id,
-      student_progress (
-        id,
-        status,
-        proof_link,
-        mentor_feedback
-      )
-    `)
-        .eq("student_progress.student_id", studentId);
+    try {
+        let query = supabase
+            .from("roadmap_items")
+            .select(`
+                id,
+                target_role_id,
+                skill_id,
+                instruction,
+                resource_link,
+                created_at,
+                target_roles (
+                    id,
+                    name
+                ),
+                market_skills (
+                    id,
+                    name
+                )
+            `);
 
-    if (currentRoleId) {
-        query = query.eq("target_role_id", currentRoleId);
+        if (currentRoleId) {
+            query = query.eq("target_role_id", currentRoleId);
+        }
+
+        const { data: items, error: itemsError } = await query;
+
+        if (itemsError) {
+            console.error("Error fetching roadmap_items:", itemsError);
+            return [];
+        }
+
+        if (!items || items.length === 0) {
+            return [];
+        }
+
+        // Fetch student_progress for this student
+        const itemIds = items.map((i: any) => i.id);
+        const { data: progressList } = await supabase
+            .from("student_progress")
+            .select("id, roadmap_item_id, status, proof_link, mentor_feedback")
+            .eq("student_id", studentId)
+            .in("roadmap_item_id", itemIds);
+
+        const progressMap = new Map<string, any[]>();
+        (progressList || []).forEach((p: any) => {
+            if (!progressMap.has(p.roadmap_item_id)) {
+                progressMap.set(p.roadmap_item_id, []);
+            }
+            progressMap.get(p.roadmap_item_id)!.push(p);
+        });
+
+        // Map into RoadmapItem structure for RoadmapClient
+        const mappedData: RoadmapItem[] = items.map((item: any) => {
+            const trackTitle = item.target_roles?.name || "Curriculum Track";
+            return {
+                id: item.id,
+                roadmap_id: item.target_role_id,
+                related_market_update_id: null,
+                task_instruction: item.instruction || "Curriculum Milestone",
+                resource_link: item.resource_link,
+                is_verified_task: false,
+                skill_id: item.skill_id,
+                roadmaps: {
+                    id: item.target_role_id,
+                    title: trackTitle,
+                    mentor_id: "",
+                },
+                student_progress: progressMap.get(item.id) || [],
+            };
+        });
+
+        return mappedData;
+    } catch (err) {
+        console.error("Unexpected error in getStudentRoadmap:", err);
+        return [];
     }
-
-    const { data, error } = await query;
-
-    if (error) {
-        console.error("Error fetching student roadmap:", error);
-        throw new Error(error.message);
-    }
-
-    // Supabase joins return arrays for relations. We map it to match our interface.
-    const mappedData = (data || []).map((item: any) => ({
-        ...item,
-        roadmaps: Array.isArray(item.roadmaps) ? item.roadmaps[0] : item.roadmaps
-    }));
-
-    return mappedData as RoadmapItem[];
 }
 
 export async function submitRoadmapProof(roadmapItemId: string, proofUrl: string) {
@@ -85,9 +118,9 @@ export async function submitRoadmapProof(roadmapItemId: string, proofUrl: string
         .from("roadmap_items")
         .select("skill_id")
         .eq("id", roadmapItemId)
-        .single();
+        .maybeSingle();
 
-    if (rmError) {
+    if (rmError || !roadmapItem) {
         console.error("Failed to fetch roadmap item skill_id:", rmError);
         throw new Error("Invalid roadmap item");
     }
@@ -100,17 +133,16 @@ export async function submitRoadmapProof(roadmapItemId: string, proofUrl: string
         .select("id")
         .eq("student_id", user.id)
         .eq("roadmap_item_id", roadmapItemId)
-        .single();
+        .maybeSingle();
 
     if (existingProgress) {
         // Update existing row to pending with the proof link
-        console.log("🚀 ATTEMPTING UPDATE for existing progress:", { progress_id: existingProgress.id, status: "pending", proof_link: proofUrl, skill_id });
         const { error } = await supabase
             .from("student_progress")
             .update({ status: "pending", proof_link: proofUrl, skill_id })
             .eq("id", existingProgress.id);
         if (error) {
-            console.error("❌ SUPABASE UPDATE ERROR (student_progress):", error); // LOOK AT YOUR VS CODE TERMINAL FOR THIS
+            console.error("❌ SUPABASE UPDATE ERROR (student_progress):", error);
             throw new Error(error.message);
         } else {
             console.log("✅ UPDATE SUCCESSFUL");

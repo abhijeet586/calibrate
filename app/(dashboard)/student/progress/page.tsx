@@ -2,6 +2,8 @@ import { getSkillGapAnalysis, TargetRole, StudentSkill } from "@/lib/actions/ski
 import { getUserId } from "@/lib/actions/userId";
 import SkillGapAnalysisClient, { PrioritySkill } from "./SkillGapClient";
 
+export const dynamic = "force-dynamic";
+
 export default async function SkillGapAnalysisPage() {
     // 1. Get the current user
     const userId = await getUserId();

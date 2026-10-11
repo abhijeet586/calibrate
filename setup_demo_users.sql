@@ -35,6 +35,12 @@ CREATE POLICY "Allow student_skills" ON public.student_skills FOR ALL USING (tru
 DROP POLICY IF EXISTS "Allow evidence_submissions" ON public.evidence_submissions;
 CREATE POLICY "Allow evidence_submissions" ON public.evidence_submissions FOR ALL USING (true) WITH CHECK (true);
 
+DROP POLICY IF EXISTS "Allow roadmap_items" ON public.roadmap_items;
+CREATE POLICY "Allow roadmap_items" ON public.roadmap_items FOR ALL USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Allow target_roles" ON public.target_roles;
+CREATE POLICY "Allow target_roles" ON public.target_roles FOR ALL USING (true) WITH CHECK (true);
+
 -- 2. Update roles for your 3 chosen demo accounts
 -- (Replace the emails below with whatever emails you prefer to use)
 

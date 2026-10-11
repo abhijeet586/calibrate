@@ -6,6 +6,8 @@ import { getSkillGapAnalysis, getHotSkills } from "@/lib/actions/skills";
 import { getUserId } from "@/lib/actions/userId";
 import FeedClient from "./FeedClient";
 
+export const dynamic = "force-dynamic";
+
 export default async function FeedPage() {
     const userId = await getUserId();
 

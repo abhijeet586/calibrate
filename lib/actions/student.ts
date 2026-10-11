@@ -83,19 +83,23 @@ export async function getStudentCurrentRole() {
 
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) {
-        throw new Error("Unauthorized");
+        return null;
     }
 
-    const { data, error } = await supabase
-        .from("student_target_roles")
-        .select("role_id")
-        .eq("student_id", user.id)
-        .maybeSingle();
+    try {
+        const { data, error } = await supabase
+            .from("student_target_roles")
+            .select("role_id")
+            .eq("student_id", user.id)
+            .maybeSingle();
 
-    if (error && error.code !== 'PGRST116') {
-        console.error("Error fetching current role:", error);
-        throw new Error(error.message);
+        if (error && error.code !== 'PGRST116') {
+            console.error("Error fetching current role:", error);
+            return null;
+        }
+
+        return data?.role_id || null;
+    } catch {
+        return null;
     }
-
-    return data?.role_id || null;
 }

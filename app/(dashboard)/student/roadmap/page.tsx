@@ -5,6 +5,8 @@ import { getUserId } from '@/lib/actions/userId';
 import { getStudentCurrentRole, getAllRolesForStudent } from '@/lib/actions/student';
 import { Target, Lightbulb } from 'lucide-react';
 
+export const dynamic = "force-dynamic";
+
 export default async function RoadmapPage() {
     // 1. Get the current user ID natively on the server
     const studentId = await getUserId();
