@@ -7,6 +7,14 @@ export default async function TargetRolesPage() {
     // 1. Get the current user
     const userId = await getUserId();
 
+    if (!userId) {
+        return (
+            <div className="flex items-center justify-center h-screen">
+                <p className="text-zinc-400">Please sign in to view target roles.</p>
+            </div>
+        );
+    }
+
     // 2. Fetch available target roles and the student's current selection
     const [roles, currentRoleId] = await Promise.all([
         getAllTargetRoles(),

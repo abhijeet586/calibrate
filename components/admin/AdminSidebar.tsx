@@ -40,8 +40,8 @@ export function AdminSidebar() {
                     <div>
                         <Link href="/">
                             <h1 className="text-2xl font-bold cursor-pointer hover:opacity-80 transition-opacity">
-                                <span className="text-white">Market</span>
-                                <span className="text-cyan-400">Ready</span>
+                                <span className="text-white">Cali</span>
+                                <span className="text-cyan-400">brate</span>
                             </h1>
                         </Link>
                         <p className="text-xs text-zinc-500">CDC Command Center</p>

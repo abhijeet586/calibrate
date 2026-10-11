@@ -113,7 +113,7 @@ export default async function FeedPage() {
             return aVal - bVal;
         });
     } else {
-        console.warn("MarketReady Dashboard Error: No active Target Role found for student", userId);
+        console.warn("Calibrate Cloud Dashboard Error: No active Target Role found for student", userId);
         console.warn("analysis.role is:", analysis.role);
     }
 

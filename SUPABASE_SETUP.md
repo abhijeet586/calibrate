@@ -47,7 +47,7 @@ create policy "Users can update own profile."
 1. In your Supabase dashboard, go to **Authentication** → **Users**
 2. Click **Add User** → **Create New User**
 3. Fill in:
-   - **Email**: pratyush@example.com (or any email you prefer)
+   - **Email**: abhijeet@calibrate.edu (or any email you prefer)
    - **Password**: 0176
    - **Auto Confirm User**: ✅ Check this box
 4. Click **Create User**
@@ -56,8 +56,8 @@ create policy "Users can update own profile."
 
 1. Go to http://localhost:3000/auth/register
 2. Fill in:
-   - **Full Name**: Pratyush
-   - **Email**: pratyush@example.com
+   - **Full Name**: Abhijeet Senapati
+   - **Email**: abhijeet@calibrate.edu
    - **Role**: Student
    - **Password**: 0176
 3. Click **Sign Up**
@@ -72,15 +72,15 @@ After creating the user, you need to add the profile:
 
 ```sql
 -- First, get the user ID
-SELECT id, email FROM auth.users WHERE email = 'pratyush@example.com';
+SELECT id, email FROM auth.users WHERE email = 'abhijeet@calibrate.edu';
 
 -- Then insert the profile (replace 'USER_ID_HERE' with the actual ID)
 INSERT INTO public.profiles (id, email, role, full_name)
 VALUES (
   'USER_ID_HERE',
-  'pratyush@example.com',
+  'abhijeet@calibrate.edu',
   'student',
-  'Pratyush'
+  'Abhijeet Senapati'
 );
 ```
 
@@ -88,16 +88,16 @@ Or use this single query:
 
 ```sql
 INSERT INTO public.profiles (id, email, role, full_name)
-SELECT id, email, 'student', 'Pratyush'
+SELECT id, email, 'student', 'Abhijeet Senapati'
 FROM auth.users 
-WHERE email = 'pratyush@example.com';
+WHERE email = 'abhijeet@calibrate.edu';
 ```
 
 ## Step 4: Test Login
 
 1. Go to http://localhost:3000/auth/login
 2. Login with:
-   - **Email**: pratyush@example.com
+   - **Email**: abhijeet@calibrate.edu
    - **Password**: 0176
 3. You should be redirected to `/student/feed`
 

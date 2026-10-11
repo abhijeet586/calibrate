@@ -2,6 +2,8 @@ import { getAdminTargetRoles, getAllSkills } from "@/lib/actions/admin";
 import { Compass } from "lucide-react";
 import AdminCurriculumClient from "./AdminCurriculumClient";
 
+export const dynamic = "force-dynamic";
+
 export default async function TrackOpsPage() {
     // Fetch base data needed for the form
     const [tracks, skills] = await Promise.all([

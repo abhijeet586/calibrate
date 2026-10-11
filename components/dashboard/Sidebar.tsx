@@ -52,7 +52,7 @@ export function Sidebar({ role }: { role: "student" | "admin" | "mentor" }) {
                 {/* Logo - Clickable to go to landing page */}
                 <Link href="/" className="mb-8 block hover:opacity-80 transition-opacity">
                     <div className="text-xl font-bold text-white">
-                        Market<span className="text-cyan-400">Ready</span>
+                        Cali<span className="text-cyan-400">brate</span>
                     </div>
                 </Link>
 
@@ -82,10 +82,10 @@ export function Sidebar({ role }: { role: "student" | "admin" | "mentor" }) {
             <div className="p-4 border-t border-white/10 bg-black/40">
                 <div className="flex items-center gap-3">
                     <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-cyan-400 to-blue-500 text-black font-bold text-xs ring-2 ring-white/10">
-                        PR
+                        AS
                     </div>
                     <div className="flex-1 min-w-0 overflow-hidden">
-                        <p className="text-sm font-medium text-white truncate">Pratyush Raj</p>
+                        <p className="text-sm font-medium text-white truncate">Abhijeet Senapati</p>
                         <p className="text-xs text-gray-500 truncate capitalize">{role}</p>
                     </div>
                     <form action={logout}>

@@ -43,7 +43,6 @@ export async function getPendingVerifications() {
             status,
             proof_link,
             student_id,
-            users!student_id ( full_name ),
             roadmap_items ( task_instruction )
         `)
         .eq("status", "pending");
@@ -53,7 +52,24 @@ export async function getPendingVerifications() {
         return [];
     }
 
-    return data || [];
+    if (!data || data.length === 0) return [];
+
+    const studentIds = [...new Set(data.map((r: any) => r.student_id).filter(Boolean))];
+    let profileMap: Record<string, string> = {};
+    if (studentIds.length > 0) {
+        const { data: profiles } = await supabase
+            .from("profiles")
+            .select("id, full_name")
+            .in("id", studentIds);
+        if (profiles) {
+            profileMap = Object.fromEntries(profiles.map((p: any) => [p.id, p.full_name || ""]));
+        }
+    }
+
+    return data.map((item: any) => ({
+        ...item,
+        users: { full_name: profileMap[item.student_id] || "Student" }
+    }));
 }
 
 export async function getPendingRoadmapTasks() {
@@ -67,9 +83,6 @@ export async function getPendingRoadmapTasks() {
             roadmap_item_id,
             proof_link,
             status,
-            users:student_id (
-                full_name
-            ),
             roadmap_items!inner(
                 task_instruction
             )
@@ -78,10 +91,27 @@ export async function getPendingRoadmapTasks() {
 
     if (error) {
         console.error("Error fetching pending roadmap tasks:", error);
-        throw new Error(error.message);
+        return [];
     }
 
-    return (data || []) as unknown as PendingRoadmapTask[];
+    if (!data || data.length === 0) return [];
+
+    const studentIds = [...new Set(data.map((r: any) => r.student_id).filter(Boolean))];
+    let profileMap: Record<string, string> = {};
+    if (studentIds.length > 0) {
+        const { data: profiles } = await supabase
+            .from("profiles")
+            .select("id, full_name")
+            .in("id", studentIds);
+        if (profiles) {
+            profileMap = Object.fromEntries(profiles.map((p: any) => [p.id, p.full_name || ""]));
+        }
+    }
+
+    return data.map((item: any) => ({
+        ...item,
+        users: { full_name: profileMap[item.student_id] || "Student" }
+    })) as unknown as PendingRoadmapTask[];
 }
 
 export async function resolveVerification(verificationId: string, status: 'approved' | 'rejected', comment: string) {
@@ -217,7 +247,6 @@ export async function getVerifySkillsQueue(): Promise<VerifySubmission[]> {
             proof_link,
             created_at,
             skill_id,
-            users:student_id ( full_name ),
             roadmap_items!inner (
                 task_instruction,
                 skill_id,
@@ -234,8 +263,22 @@ export async function getVerifySkillsQueue(): Promise<VerifySubmission[]> {
         return [];
     }
 
+    if (!data || data.length === 0) return [];
+
+    const studentIds = [...new Set(data.map((r: any) => r.student_id).filter(Boolean))];
+    let profileMap: Record<string, string> = {};
+    if (studentIds.length > 0) {
+        const { data: profiles } = await supabase
+            .from("profiles")
+            .select("id, full_name")
+            .in("id", studentIds);
+        if (profiles) {
+            profileMap = Object.fromEntries(profiles.map((p: any) => [p.id, p.full_name || ""]));
+        }
+    }
+
     return (data || []).map((row: any) => {
-        const fullName: string = row.users?.full_name || "Unknown Student";
+        const fullName: string = profileMap[row.student_id] || "Student";
         const initials = fullName
             .split(" ")
             .map((n: string) => n[0])

@@ -10,6 +10,7 @@ import {
     Clock,
     ChevronDown,
     Loader2,
+    Cloud,
 } from "lucide-react";
 import { approveSubmission, rejectSubmission } from "@/lib/actions/mentor";
 import type { VerifySubmission } from "@/lib/actions/mentor";
@@ -296,9 +297,17 @@ export default function VerifySkillsClient({
 
                                         {/* Proof URL */}
                                         <div>
-                                            <h3 className="text-sm font-semibold text-zinc-400 uppercase tracking-wider mb-3">
-                                                Submission Proof
-                                            </h3>
+                                            <div className="flex items-center justify-between mb-3">
+                                                <h3 className="text-sm font-semibold text-zinc-400 uppercase tracking-wider">
+                                                    Submission Proof
+                                                </h3>
+                                                {selectedSubmission.proofUrl && (selectedSubmission.proofUrl.includes("amazonaws.com") || selectedSubmission.proofUrl.includes("calibrate-evidence-vault")) && (
+                                                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-400/10 border border-amber-400/30 text-amber-400">
+                                                        <Cloud className="w-3.5 h-3.5" />
+                                                        AWS S3 Verified Artifact
+                                                    </span>
+                                                )}
+                                            </div>
                                             {selectedSubmission.proofUrl ? (
                                                 <a
                                                     href={selectedSubmission.proofUrl}
@@ -307,7 +316,7 @@ export default function VerifySkillsClient({
                                                     className="inline-flex items-center gap-3 px-5 py-4 bg-gradient-to-r from-cyan-400/10 to-teal-500/10 border border-cyan-400/30 rounded-lg text-cyan-400 hover:border-cyan-400 hover:bg-cyan-400/20 transition-all group"
                                                 >
                                                     <ExternalLink className="w-5 h-5 group-hover:scale-110 transition-transform" />
-                                                    <span className="font-medium">
+                                                    <span className="font-medium break-all">
                                                         {selectedSubmission.proofUrl}
                                                     </span>
                                                 </a>

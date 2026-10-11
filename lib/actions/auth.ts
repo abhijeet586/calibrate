@@ -28,7 +28,15 @@ export async function login(formData: FormData) {
         .eq('id', authData.user.id)
         .single()
 
-    const role = profile?.role || 'student'
+    const role = profile?.role || 'student';
+
+    // Ensure user row exists in public.users so RBAC middleware permits routing
+    await supabase.from('users').upsert({
+        id: authData.user.id,
+        email: authData.user.email,
+        full_name: authData.user.user_metadata?.full_name || authData.user.email?.split('@')[0],
+        role: role,
+    });
 
     // Redirect based on role
     if (role === 'mentor') {
@@ -88,33 +96,44 @@ export async function signup(formData: FormData) {
     }
 
     if (data.user) {
-        // Create profile with hardcoded student role
-        const { error: profileError } = await supabase
+        // Create profile (upsert so it doesn't clash with DB triggers)
+        await supabase
             .from('profiles')
-            .insert({
+            .upsert({
                 id: data.user.id,
                 email: email,
                 full_name: fullName,
                 role: role,
-            })
+            });
 
-        if (profileError) {
-            console.error('Error creating profile:', profileError)
-        }
-
-        // Also insert into users table (used by other parts of the app)
-        const { error: userError } = await supabase
+        // Also ensure entry in users table
+        await supabase
             .from('users')
-            .insert({
+            .upsert({
                 id: data.user.id,
+                email: email,
                 full_name: fullName,
                 role: role,
-            })
-
-        if (userError) {
-            console.error('Error creating user:', userError)
-        }
+            });
     }
 
-    redirect('/student/feed')
+    if (data.session) {
+        return redirect('/student/feed');
+    }
+
+    // Try explicit sign in to establish session cookies
+    const { error: signInError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+    });
+
+    if (!signInError) {
+        return redirect('/student/feed');
+    }
+
+    if (signInError.message.toLowerCase().includes('not confirmed')) {
+        return redirect('/auth/login?message=' + encodeURIComponent('Registration successful! Please check your email inbox to confirm your account, or disable "Confirm email" in Supabase settings.'));
+    }
+
+    return redirect('/auth/login?message=' + encodeURIComponent(signInError.message));
 }

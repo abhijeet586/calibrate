@@ -6,6 +6,14 @@ export default async function SkillGapAnalysisPage() {
     // 1. Get the current user
     const userId = await getUserId();
 
+    if (!userId) {
+        return (
+            <div className="flex items-center justify-center h-screen">
+                <p className="text-zinc-400">Please sign in to view your skill gap analysis.</p>
+            </div>
+        );
+    }
+
     // 2. Fetch the complex skill gap object for the student
     const analysis = await getSkillGapAnalysis(userId);
 

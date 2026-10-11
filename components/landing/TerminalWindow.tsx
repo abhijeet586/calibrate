@@ -36,7 +36,7 @@ export function TerminalWindow() {
             <div className="p-6 font-mono text-sm">
                 <div className="space-y-3">
                     <div className="text-gray-400">
-                        <span className="text-cyan-400">$</span> marketready analyze --student
+                        <span className="text-cyan-400">$</span> calibrate analyze --student
                     </div>
                     <div className="text-cyan-400">
                         → Analyzing skill portfolio...

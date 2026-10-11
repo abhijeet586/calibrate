@@ -2,6 +2,8 @@ import { getAdminTargetRoles } from "@/lib/actions/admin";
 import AdminTracksClient from "./AdminTracksClient";
 import { Compass } from "lucide-react";
 
+export const dynamic = "force-dynamic";
+
 export default async function AdminTracksPage() {
     const roles = await getAdminTargetRoles();
 

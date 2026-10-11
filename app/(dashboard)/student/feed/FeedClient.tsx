@@ -82,7 +82,7 @@ export default function FeedClient({ initialFeed }: { initialFeed: FeedItem[] })
                             time={timeAgo(item.created_at)}
                             // We don't have a rigid "company" entity directly on the update, 
                             // but we can use the Admin's name or a piece of the content text.
-                            company={item.users?.full_name || "MarketReady Admin"}
+                            company={item.users?.full_name || "Calibrate Cloud CDC"}
                         />
                     ))
                 )}

@@ -24,7 +24,7 @@ export default async function RoadmapPage() {
     const currentRoleId = await getStudentCurrentRole();
     const roles = await getAllRolesForStudent();
     const activeTrack = roles.find(r => r.id === currentRoleId);
-    const trackName = activeTrack ? activeTrack.name : "MarketReady";
+    const trackName = activeTrack ? activeTrack.name : "Calibrate Cloud";
 
     // 3. Fetch the realtime items for this student and this track
     const items = await getStudentRoadmap(studentId, currentRoleId);
@@ -39,7 +39,7 @@ export default async function RoadmapPage() {
                             <div>
                                 <h1 className="text-3xl font-bold text-white mb-2">My Roadmap</h1>
                                 <p className="text-sm text-zinc-400 max-w-lg">
-                                    MarketReady {trackName} Curriculum
+                                    Calibrate Cloud {trackName} Curriculum
                                 </p>
                             </div>
                         </div>

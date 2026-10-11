@@ -13,6 +13,8 @@ import { getRecentBroadcasts, MarketUpdate } from "@/lib/actions/admin";
 import BroadcastFormClient from "./BroadcastFormClient";
 import DeleteBroadcastButton from "./DeleteBroadcastButton";
 
+export const dynamic = "force-dynamic";
+
 // ─── Data Types & Mocks ────────────────────────────────────────
 
 interface MarketTrend {

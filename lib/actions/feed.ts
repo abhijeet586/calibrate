@@ -17,31 +17,40 @@ export interface FeedItem {
 export async function getMarketFeed() {
     const supabase = await createClient();
 
-    // Authenticated users only, but any role can read the feed
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
-        throw new Error("Unauthorized");
-    }
-
-    const { data, error } = await supabase
+    // 1. Fetch market updates
+    const { data: updates, error } = await supabase
         .from("market_updates")
-        .select(`
-            id,
-            title,
-            content,
-            category,
-            posted_by,
-            created_at,
-            users:posted_by (
-                full_name
-            )
-        `)
+        .select("id, title, content, category, posted_by, created_at")
         .order("created_at", { ascending: false });
 
     if (error) {
         console.error("Error fetching market feed:", error);
-        throw new Error(error.message);
+        return [];
     }
 
-    return (data || []) as unknown as FeedItem[];
+    if (!updates || updates.length === 0) {
+        return [];
+    }
+
+    // 2. Fetch author names from profiles/users
+    const authorIds = [...new Set(updates.map(u => u.posted_by).filter(Boolean))];
+    let authorMap: Record<string, string> = {};
+
+    if (authorIds.length > 0) {
+        const { data: profiles } = await supabase
+            .from("profiles")
+            .select("id, full_name")
+            .in("id", authorIds);
+
+        if (profiles) {
+            authorMap = Object.fromEntries(profiles.map(p => [p.id, p.full_name || ""]));
+        }
+    }
+
+    return updates.map(item => ({
+        ...item,
+        users: item.posted_by && authorMap[item.posted_by]
+            ? { full_name: authorMap[item.posted_by] }
+            : null,
+    })) as FeedItem[];
 }

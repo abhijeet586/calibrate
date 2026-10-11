@@ -7,7 +7,7 @@ Since login isn't working, the user account likely wasn't created properly. Here
 1. Go to: https://supabase.com/dashboard/project/inulencomnwpnbrteryc/auth/users
 2. Click **"Add User"** → **"Create New User"**
 3. Fill in:
-   - **Email**: `pratyush@example.com`
+   - **Email**: `abhijeet@calibrate.edu`
    - **Password**: `0176`
    - **✅ Auto Confirm User**: CHECK THIS BOX (important!)
 4. Click **"Create User"**
@@ -22,9 +22,9 @@ After creating the user, add their profile:
 3. Click **"Insert"** → **"Insert row"**
 4. Fill in:
    - **id**: Paste the User ID from step 1
-   - **email**: `pratyush@example.com`
+   - **email**: `abhijeet@calibrate.edu`
    - **role**: `student`
-   - **full_name**: `Pratyush`
+   - **full_name**: `Abhijeet Senapati`
 5. Click **"Save"**
 
 ## Option 3: Use SQL (All-in-One)
@@ -33,7 +33,7 @@ If the profiles table exists, run this in SQL Editor:
 
 ```sql
 -- This will show you if the user exists
-SELECT id, email, confirmed_at FROM auth.users WHERE email = 'pratyush@example.com';
+SELECT id, email, confirmed_at FROM auth.users WHERE email = 'abhijeet@calibrate.edu';
 ```
 
 If no user exists, you need to create one via the dashboard (Option 1).

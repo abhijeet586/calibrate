@@ -1,0 +1,71 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  Calibrate Cloud — Cloud-Native Student Skill Development & Proof-of-Work Verification Platform.
+  Capstone Infrastructure: S3 Evidence Vault, Lambda Presigned Generator, API Gateway, SNS Topic.
+
+Globals:
+  Function:
+    Timeout: 15
+    Runtime: nodejs20.x
+    MemorySize: 256
+    Environment:
+      Variables:
+        AWS_S3_BUCKET_NAME: !Ref EvidenceVaultBucket
+        AWS_REGION: !Ref AWS::Region
+
+Resources:
+  # 1. Amazon S3 Evidence Vault Bucket
+  EvidenceVaultBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: calibrate-evidence-vault
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      CorsConfiguration:
+        CorsRules:
+          - AllowedHeaders: ['*']
+            AllowedMethods: [GET, PUT, POST, HEAD]
+            AllowedOrigins: ['http://localhost:3000', 'https://*']
+            ExposeHeaders: ['ETag']
+            MaxAge: 3000
+
+  # 2. Amazon SNS Review Notifications Topic
+  MentorReviewNotificationTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: calibrate-mentor-alerts
+      DisplayName: Calibrate Mentor Review Notifications
+
+  # 3. AWS Lambda Function — Presigned URL Generation Microservice
+  PresignedUrlFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: calibrate-generate-presigned-url
+      CodeUri: lambda/
+      Handler: presignedUrlHandler.handler
+      Policies:
+        - S3CrudPolicy:
+            BucketName: !Ref EvidenceVaultBucket
+      Events:
+        GenerateUrlApi:
+          Type: Api
+          Properties:
+            Path: /evidence/presigned-url
+            Method: post
+
+Outputs:
+  EvidenceVaultBucketName:
+    Description: "Amazon S3 Evidence Vault Bucket"
+    Value: !Ref EvidenceVaultBucket
+
+  MentorReviewNotificationTopicArn:
+    Description: "Amazon SNS Topic ARN for Mentor Verification Alerts"
+    Value: !Ref MentorReviewNotificationTopic
+
+  ApiEndpointUrl:
+    Description: "API Gateway Endpoint for Presigned URL Generation"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/evidence/presigned-url"

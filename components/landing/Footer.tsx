@@ -56,7 +56,7 @@ export function Footer() {
                 <div className="grid grid-cols-1 gap-8 md:grid-cols-4">
                     {/* Brand */}
                     <div className="space-y-4">
-                        <h3 className="text-xl font-bold text-white">MarketReady</h3>
+                        <h3 className="text-xl font-bold text-white">Calibrate</h3>
                         <p className="text-sm text-gray-400">
                             Bridging the gap between education and employment with real-time market intelligence.
                         </p>
@@ -95,7 +95,7 @@ export function Footer() {
                 </div>
 
                 <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-white/10 pt-8 text-sm text-gray-400 md:flex-row">
-                    <p>© 2026 MarketReady. All rights reserved.</p>
+                    <p>© 2026 Calibrate. All rights reserved.</p>
                     <div className="flex gap-6">
                         <Link href="#" className="hover:text-cyan-400 transition-colors">Privacy Policy</Link>
                         <Link href="#" className="hover:text-cyan-400 transition-colors">Terms of Service</Link>

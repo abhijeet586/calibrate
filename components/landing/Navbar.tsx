@@ -8,8 +8,8 @@ export function Navbar() {
         <nav className="fixed top-0 left-0 right-0 z-50 border-b border-white/10 bg-black/50 backdrop-blur-xl">
             <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6">
                 <Link href="/" className="text-2xl font-bold">
-                    <span className="text-white">Market</span>
-                    <span className="text-cyan-400">Ready</span>
+                    <span className="text-white">Cali</span>
+                    <span className="text-cyan-400">brate</span>
                 </Link>
 
                 <div className="flex items-center gap-4">

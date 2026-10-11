@@ -41,7 +41,7 @@ function KPICard({
     title: string;
     value: string;
     subtitle: string;
-    variant?: "progress" | "verified" | "critical";
+    variant?: "progress" | "verified" | "critical" | "default";
     progress?: number;
 }) {
     return (

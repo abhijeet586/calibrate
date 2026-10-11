@@ -151,23 +151,14 @@ export async function submitSkillForVerification(skillId: string, proofUrl: stri
 export async function getHotSkills() {
     const supabase = await createClient();
 
-    // The user's prompt suggested fetching where is_hot = true. 
-    // If is_hot doesn't exist it might fail, but we'll try to select cautiously or handle error if column is missing.
-    // For now, let's assume market_skills has is_hot: boolean, or we can just fetch some skills.
     const { data, error } = await supabase
         .from("market_skills")
         .select("name")
-        .eq("is_hot", true)
         .limit(10);
 
     if (error) {
-        console.error("Error fetching hot skills, falling back to all:", error);
-        // Fallback in case is_hot doesn't exist
-        const { data: fallbackData } = await supabase
-            .from("market_skills")
-            .select("name")
-            .limit(10);
-        return (fallbackData || []).map((s: any) => s.name as string);
+        console.error("Error fetching skills:", error);
+        return [];
     }
 
     return (data || []).map((s: any) => s.name as string);

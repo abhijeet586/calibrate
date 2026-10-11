@@ -53,13 +53,18 @@ export async function assignTargetRole(roleId: string) {
         throw new Error("Unauthorized");
     }
 
+    // Clear any existing active role for this student first
+    await supabase
+        .from("student_target_roles")
+        .delete()
+        .eq("student_id", user.id);
+
+    // Insert the new chosen target role
     const { error } = await supabase
         .from("student_target_roles")
-        .upsert({
+        .insert({
             student_id: user.id,
             role_id: roleId,
-        }, {
-            onConflict: 'student_id'
         });
 
     if (error) {
