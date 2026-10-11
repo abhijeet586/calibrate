@@ -162,7 +162,7 @@ export default function VerificationQueueClient({ initialQueue }: VerificationQu
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             <a
-                                                href={item.proofUrl}
+                                                href={`/api/evidence/view?url=${encodeURIComponent(item.proofUrl)}`}
                                                 target="_blank"
                                                 rel="noreferrer"
                                                 className="inline-flex items-center gap-1.5 text-sm text-cyan-400 hover:text-cyan-300 hover:underline font-medium transition-colors"

@@ -310,15 +310,22 @@ export default function VerifySkillsClient({
                                             </div>
                                             {selectedSubmission.proofUrl ? (
                                                 <a
-                                                    href={selectedSubmission.proofUrl}
+                                                    href={`/api/evidence/view?url=${encodeURIComponent(selectedSubmission.proofUrl)}`}
                                                     target="_blank"
                                                     rel="noopener noreferrer"
                                                     className="inline-flex items-center gap-3 px-5 py-4 bg-gradient-to-r from-cyan-400/10 to-teal-500/10 border border-cyan-400/30 rounded-lg text-cyan-400 hover:border-cyan-400 hover:bg-cyan-400/20 transition-all group"
                                                 >
-                                                    <ExternalLink className="w-5 h-5 group-hover:scale-110 transition-transform" />
-                                                    <span className="font-medium break-all">
-                                                        {selectedSubmission.proofUrl}
-                                                    </span>
+                                                    <ExternalLink className="w-5 h-5 group-hover:scale-110 transition-transform shrink-0" />
+                                                    <div className="flex flex-col text-left min-w-0">
+                                                        <span className="font-semibold text-cyan-300">
+                                                            {selectedSubmission.proofUrl.includes("amazonaws.com")
+                                                                ? "Open AWS S3 Deliverable (Signed Viewer)"
+                                                                : "Open Submission Proof"}
+                                                        </span>
+                                                        <span className="text-xs text-zinc-400 font-mono break-all mt-0.5">
+                                                            {selectedSubmission.proofUrl}
+                                                        </span>
+                                                    </div>
                                                 </a>
                                             ) : (
                                                 <p className="text-zinc-500 italic">
