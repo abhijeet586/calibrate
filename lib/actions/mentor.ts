@@ -43,7 +43,8 @@ export async function getPendingVerifications() {
             status,
             proof_link,
             student_id,
-            roadmap_items ( task_instruction )
+            created_at,
+            roadmap_items ( id, instruction )
         `)
         .eq("status", "pending");
 
@@ -83,8 +84,10 @@ export async function getPendingRoadmapTasks() {
             roadmap_item_id,
             proof_link,
             status,
+            created_at,
             roadmap_items!inner(
-                task_instruction
+                id,
+                instruction
             )
         `)
         .eq("status", "pending");
@@ -246,9 +249,8 @@ export async function getVerifySkillsQueue(): Promise<VerifySubmission[]> {
             student_id,
             proof_link,
             created_at,
-            skill_id,
             roadmap_items!inner (
-                task_instruction,
+                instruction,
                 skill_id,
                 target_role_id,
                 target_roles ( name ),
@@ -287,10 +289,10 @@ export async function getVerifySkillsQueue(): Promise<VerifySubmission[]> {
             .slice(0, 2);
 
         const ri = Array.isArray(row.roadmap_items) ? row.roadmap_items[0] : row.roadmap_items;
-        const taskInstruction: string = ri?.task_instruction || "Unknown Task";
+        const taskInstruction: string = ri?.instruction || "Unknown Task";
         const trackName: string = ri?.target_roles?.name || "General";
         const skillName: string = ri?.market_skills?.name || "General Skill";
-        const skillId: string = ri?.skill_id || row.skill_id || "";
+        const skillId: string = ri?.skill_id || "";
 
         // Relative time
         const diffMs = Date.now() - new Date(row.created_at || Date.now()).getTime();

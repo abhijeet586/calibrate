@@ -1,6 +1,8 @@
 import { getVerifySkillsQueue } from "@/lib/actions/mentor";
 import VerifySkillsClient from "./VerifySkillsClient";
 
+export const dynamic = "force-dynamic";
+
 export default async function VerifySkillsPage() {
     const submissions = await getVerifySkillsQueue();
 

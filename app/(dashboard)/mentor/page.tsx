@@ -14,6 +14,8 @@ export type QueueItem = {
     submittedAt: string;
 };
 
+export const dynamic = "force-dynamic";
+
 export default async function MentorPage() {
     // 1. Fetch pending tasks from student_progress pipeline
     const verifications = await getPendingVerifications();
@@ -26,7 +28,7 @@ export default async function MentorPage() {
             id: v.student_id,
             name: v.users?.full_name || "Unknown Student",
         },
-        taskName: v.roadmap_items?.task_instruction || "Unknown Task",
+        taskName: v.roadmap_items?.instruction || v.roadmap_items?.task_instruction || "Curriculum Milestone",
         proofUrl: v.proof_link,
         submittedAt: v.created_at || new Date().toISOString(),
     }));
