@@ -6,7 +6,8 @@ import { publishVerificationNotification } from "@/lib/aws/sns";
 import { logCloudWatchEvent } from "@/lib/aws/cloudwatch";
 import { revalidatePath } from "next/cache";
 
-const bucketName = process.env.AWS_S3_BUCKET_NAME || "calibrate-evidence-vault";
+const bucketName = process.env.APP_AWS_S3_BUCKET_NAME || process.env.AWS_S3_BUCKET_NAME || "calibrate-evidence-vault";
+const region = process.env.APP_AWS_REGION || process.env.AWS_REGION || "ap-southeast-2";
 
 export interface PresignedUrlResponse {
     uploadUrl: string;
@@ -103,7 +104,7 @@ export async function submitEvidenceRecord({
 
     // 2. If tied to a roadmap milestone, record in student_progress
     if (roadmapItemId) {
-        const s3PublicUrl = `https://${bucketName}.s3.${process.env.AWS_REGION || "ap-southeast-2"}.amazonaws.com/${s3Key}`;
+        const s3PublicUrl = `https://${bucketName}.s3.${region}.amazonaws.com/${s3Key}`;
         await supabase.from("student_progress").insert({
             student_id: user.id,
             roadmap_item_id: roadmapItemId,
@@ -116,7 +117,7 @@ export async function submitEvidenceRecord({
     await publishVerificationNotification({
         studentName: user.email?.split("@")[0] || "Student",
         taskTitle: title,
-        s3Url: `https://${bucketName}.s3.${process.env.AWS_REGION || "ap-southeast-2"}.amazonaws.com/${s3Key}`,
+        s3Url: `https://${bucketName}.s3.${region}.amazonaws.com/${s3Key}`,
     });
 
     // 4. Log to CloudWatch

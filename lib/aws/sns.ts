@@ -1,9 +1,9 @@
 import { SNSClient, PublishCommand } from "@aws-sdk/client-sns";
 
-const region = process.env.AWS_REGION || "ap-southeast-2";
-const accessKeyId = process.env.AWS_ACCESS_KEY_ID || "";
-const secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY || "";
-const topicArn = process.env.AWS_SNS_TOPIC_ARN || "";
+const region = process.env.APP_AWS_REGION || process.env.AWS_REGION || "ap-southeast-2";
+const accessKeyId = process.env.APP_AWS_ACCESS_KEY_ID || process.env.AWS_ACCESS_KEY_ID || "";
+const secretAccessKey = process.env.APP_AWS_SECRET_ACCESS_KEY || process.env.AWS_SECRET_ACCESS_KEY || "";
+const topicArn = process.env.APP_AWS_SNS_TOPIC_ARN || process.env.AWS_SNS_TOPIC_ARN || "";
 
 export const snsClient = new SNSClient({
     region,
