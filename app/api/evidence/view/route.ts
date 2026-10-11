@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { generatePresignedDownloadUrl } from "@/lib/aws/s3";
+import { s3Client } from "@/lib/aws/s3";
+import { GetObjectCommand } from "@aws-sdk/client-s3";
 
 export const dynamic = "force-dynamic";
 
@@ -39,12 +40,44 @@ export async function GET(request: NextRequest) {
             return NextResponse.json({ error: "Unable to parse S3 object key" }, { status: 400 });
         }
 
-        const presignedUrl = await generatePresignedDownloadUrl(objectKey);
-        return NextResponse.redirect(presignedUrl, { status: 307 });
+        const bucketName =
+            process.env.APP_AWS_S3_BUCKET_NAME ||
+            process.env.AWS_S3_BUCKET_NAME ||
+            "calibrate-evidence-vault";
+
+        const s3Response = await s3Client.send(
+            new GetObjectCommand({
+                Bucket: bucketName,
+                Key: objectKey,
+            })
+        );
+
+        if (!s3Response.Body) {
+            return NextResponse.json({ error: "Empty artifact response from S3" }, { status: 404 });
+        }
+
+        // Convert AWS SDK stream to Web ReadableStream
+        const stream = s3Response.Body.transformToWebStream();
+        const contentType = s3Response.ContentType || "application/pdf";
+        const fileName = objectKey.split("/").pop() || "evidence-artifact";
+
+        const headers = new Headers();
+        headers.set("Content-Type", contentType);
+        if (s3Response.ContentLength) {
+            headers.set("Content-Length", s3Response.ContentLength.toString());
+        }
+        // inline display allows browser to preview PDF and images directly
+        headers.set("Content-Disposition", `inline; filename="${fileName}"`);
+        headers.set("Cache-Control", "private, max-age=3600");
+
+        return new NextResponse(stream as any, {
+            status: 200,
+            headers,
+        });
     } catch (err: any) {
-        console.error("Error generating presigned download URL:", err);
+        console.error("Error streaming S3 artifact:", err);
         return NextResponse.json(
-            { error: "Failed to generate presigned download URL", details: err?.message },
+            { error: "Failed to load artifact from S3 Evidence Vault", details: err?.message },
             { status: 500 }
         );
     }
