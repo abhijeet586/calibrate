@@ -131,3 +131,14 @@ SELECT
 FROM public.target_roles tr, public.market_skills ms
 WHERE tr.name = 'Full-Stack Cloud Engineer' AND ms.name = 'TypeScript & Next.js'
 ON CONFLICT DO NOTHING;
+
+-- 4. Automatically Assign Student to 'Cloud Solutions Architect' Track
+INSERT INTO public.student_target_roles (student_id, role_id)
+SELECT 
+    p.id,
+    tr.id
+FROM public.profiles p, public.target_roles tr
+WHERE p.email IN ('student@calibrate.edu', 'abhijeet@calibrate.edu')
+  AND tr.name = 'Cloud Solutions Architect'
+ON CONFLICT DO NOTHING;
+
