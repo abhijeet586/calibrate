@@ -60,6 +60,20 @@ export async function getSkillGapAnalysis(studentId: string): Promise<SkillGapAn
             }
         }
 
+        // Fallback to top target role if none is explicitly assigned
+        if (!role) {
+            const { data: defaultRole } = await supabase
+                .from("target_roles")
+                .select("id, name, required_skills, market_demand_score")
+                .order("market_demand_score", { ascending: false })
+                .limit(1)
+                .maybeSingle();
+
+            if (defaultRole) {
+                role = defaultRole as TargetRole;
+            }
+        }
+
         // 2. Fetch the student's verified skills
         const { data: verifiedSkills, error: skillsError } = await supabase
             .from("student_skills")

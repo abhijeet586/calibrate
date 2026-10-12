@@ -115,6 +115,14 @@ export async function signup(formData: FormData) {
                 full_name: fullName,
                 role: role,
             });
+
+        // Auto-assign default track (Cloud Solutions Architect) so roadmap and feed are immediately populated
+        await supabase
+            .from('student_target_roles')
+            .upsert({
+                student_id: data.user.id,
+                role_id: '29952f28-5cce-4d64-8934-b5b8b1c25aac',
+            });
     }
 
     if (data.session) {

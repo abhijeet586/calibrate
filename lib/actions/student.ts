@@ -103,8 +103,20 @@ export async function getStudentCurrentRole() {
             return null;
         }
 
-        return data?.role_id || null;
+        if (data?.role_id) {
+            return data.role_id;
+        }
+
+        // Fallback for new students: default to top target role
+        const { data: defaultRole } = await supabase
+            .from("target_roles")
+            .select("id")
+            .order("market_demand_score", { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
+        return defaultRole?.id || '29952f28-5cce-4d64-8934-b5b8b1c25aac';
     } catch {
-        return null;
+        return '29952f28-5cce-4d64-8934-b5b8b1c25aac';
     }
 }
