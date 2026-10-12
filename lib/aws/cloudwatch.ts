@@ -17,6 +17,15 @@ export const cwLogsClient = new CloudWatchLogsClient({
     },
 });
 
+export interface TelemetryEvent {
+    id: string;
+    timestamp: string;
+    event: "PRESIGNED_URL_GENERATED" | "EVIDENCE_SUBMITTED" | "VERIFICATION_APPROVED" | "SNS_ALERT_DISPATCHED";
+    service: "Amazon CloudWatch" | "Amazon SNS" | "Amazon S3";
+    logGroup: string;
+    details: Record<string, any>;
+}
+
 /**
  * Emits telemetry and verification audit events to Amazon CloudWatch Logs.
  */
@@ -26,9 +35,71 @@ export async function logCloudWatchEvent(eventName: string, details: Record<stri
         timestamp: new Date(timestamp).toISOString(),
         event: eventName,
         platform: "calibrate-cloud",
+        logGroup: logGroupName,
         ...details,
     });
 
     console.log(`[AWS CloudWatch] ${eventName}:`, logMessage);
-    // In production with an active Log Stream, logs are streamed via PutLogEventsCommand
 }
+
+/**
+ * Retrieves recent CloudWatch & SNS audit events for administrative observability.
+ */
+export async function getRecentTelemetryEvents(): Promise<TelemetryEvent[]> {
+    try {
+        const { createClient } = await import("@/lib/supabase/server");
+        const supabase = await createClient();
+
+        const { data: submissions } = await supabase
+            .from("evidence_submissions")
+            .select("id, title, file_name, file_size_bytes, s3_key, s3_bucket, status, created_at, student_id")
+            .order("created_at", { ascending: false })
+            .limit(10);
+
+        if (!submissions || submissions.length === 0) {
+            return [];
+        }
+
+        const events: TelemetryEvent[] = [];
+
+        for (const sub of submissions) {
+            // 1. Evidence submission log
+            events.push({
+                id: `cw-sub-${sub.id}`,
+                timestamp: sub.created_at,
+                event: "EVIDENCE_SUBMITTED",
+                service: "Amazon CloudWatch",
+                logGroup: logGroupName,
+                details: {
+                    submissionId: sub.id,
+                    studentId: sub.student_id,
+                    fileName: sub.file_name,
+                    fileSizeBytes: sub.file_size_bytes,
+                    s3Key: sub.s3_key,
+                    s3Bucket: sub.s3_bucket,
+                },
+            });
+
+            // 2. Correlated SNS dispatch alert
+            events.push({
+                id: `sns-alert-${sub.id}`,
+                timestamp: sub.created_at,
+                event: "SNS_ALERT_DISPATCHED",
+                service: "Amazon SNS",
+                logGroup: "arn:aws:sns:ap-southeast-2:calibrate-mentor-alerts",
+                details: {
+                    topic: "calibrate-mentor-alerts",
+                    subject: `[Calibrate] New Proof Deliverable: ${sub.title}`,
+                    recipientGroup: "Mentor Verification Queue",
+                    s3Artifact: `s3://${sub.s3_bucket}/${sub.s3_key}`,
+                },
+            });
+        }
+
+        return events;
+    } catch (err) {
+        console.error("Error reading telemetry events:", err);
+        return [];
+    }
+}
+

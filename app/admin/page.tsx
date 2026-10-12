@@ -12,7 +12,9 @@ import {
 import { TrendingUp, AlertTriangle, Radio } from "lucide-react";
 import { getVerificationBottlenecks, getMentorWorkloads } from "@/lib/actions/bottlenecks";
 import { getRecentBroadcasts } from "@/lib/actions/admin";
+import { getRecentTelemetryEvents } from "@/lib/aws/cloudwatch";
 import { BottlenecksSection } from "./components/BottlenecksSection";
+import { TelemetrySection } from "./components/TelemetrySection";
 
 // Supabase-ready mock data structures
 interface TrackPerformance {
@@ -54,16 +56,22 @@ function formatTimeAgo(dateString: string) {
     return `${diffDays}d ago`;
 }
 
+export const dynamic = "force-dynamic";
+
 export default async function AdminDashboard() {
     // Fetch live data from Supabase in parallel
-    const [bottlenecks, mentors, broadcasts] = await Promise.all([
+    const [bottlenecks, mentors, broadcasts, telemetryEvents] = await Promise.all([
         getVerificationBottlenecks(),
         getMentorWorkloads(),
         getRecentBroadcasts(),
+        getRecentTelemetryEvents(),
     ]);
 
     return (
         <main className="flex-1 space-y-6 p-6">
+            {/* Live AWS Telemetry & Observability Feed */}
+            <TelemetrySection events={telemetryEvents} />
+
             {/* Row 1: The Pulse - 2 Stats Cards */}
             <div className="grid gap-6 md:grid-cols-2">
                 <Card className="border-zinc-800 bg-zinc-900">

@@ -57,6 +57,13 @@ Resources:
             Path: /evidence/presigned-url
             Method: post
 
+  # 4. Amazon CloudWatch Telemetry & Audit Log Group
+  EvidenceAuditLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: /calibrate/evidence-audit
+      RetentionInDays: 30
+
 Outputs:
   EvidenceVaultBucketName:
     Description: "Amazon S3 Evidence Vault Bucket"
@@ -65,6 +72,10 @@ Outputs:
   MentorReviewNotificationTopicArn:
     Description: "Amazon SNS Topic ARN for Mentor Verification Alerts"
     Value: !Ref MentorReviewNotificationTopic
+
+  AuditLogGroupName:
+    Description: "Amazon CloudWatch Log Group for Security & Verification Telemetry"
+    Value: !Ref EvidenceAuditLogGroup
 
   ApiEndpointUrl:
     Description: "API Gateway Endpoint for Presigned URL Generation"
