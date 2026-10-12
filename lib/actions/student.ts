@@ -81,6 +81,7 @@ export async function assignTargetRole(roleId: string) {
     revalidatePath("/student/target-roles");
     revalidatePath("/student/feed");
     revalidatePath("/student/progress");
+    revalidatePath("/student/roadmap");
 }
 
 export async function getStudentCurrentRole() {
@@ -103,20 +104,8 @@ export async function getStudentCurrentRole() {
             return null;
         }
 
-        if (data?.role_id) {
-            return data.role_id;
-        }
-
-        // Fallback for new students: default to top target role
-        const { data: defaultRole } = await supabase
-            .from("target_roles")
-            .select("id")
-            .order("market_demand_score", { ascending: false })
-            .limit(1)
-            .maybeSingle();
-
-        return defaultRole?.id || '29952f28-5cce-4d64-8934-b5b8b1c25aac';
+        return data?.role_id || null;
     } catch {
-        return '29952f28-5cce-4d64-8934-b5b8b1c25aac';
+        return null;
     }
 }

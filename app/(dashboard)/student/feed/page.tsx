@@ -1,3 +1,5 @@
+import Link from "next/link";
+import { Compass } from "lucide-react";
 import { ScoreWidget } from "@/components/student/ScoreWidget";
 import { FocusWidget } from "@/components/student/FocusWidget";
 import { HotSkillsWidget } from "@/components/student/HotSkillsWidget";
@@ -126,6 +128,23 @@ export default async function FeedPage() {
 
             {/* Right Widgets Column */}
             <div className="w-80 space-y-6 shrink-0">
+                {!analysis.role && (
+                    <div className="rounded-xl border border-cyan-500/30 bg-gradient-to-br from-cyan-950/40 to-zinc-900 p-5 shadow-lg relative overflow-hidden">
+                        <div className="flex items-center gap-2 text-cyan-400 font-semibold text-sm mb-2">
+                            <Compass className="w-4 h-4" />
+                            <span>Choose Career Track</span>
+                        </div>
+                        <p className="text-xs text-zinc-400 mb-4 leading-relaxed">
+                            Select an industry specialization track to calculate your personalized readiness score and view targeted skill gaps.
+                        </p>
+                        <Link
+                            href="/student/roles"
+                            className="inline-flex items-center justify-center w-full py-2.5 px-3 bg-cyan-500 hover:bg-cyan-400 text-black text-xs font-bold rounded-lg transition-all shadow-[0_0_15px_rgba(6,182,212,0.25)]"
+                        >
+                            Choose Track Now →
+                        </Link>
+                    </div>
+                )}
                 <ScoreWidget score={overallScore} />
                 <FocusWidget items={focusItems.slice(0, 3)} /> {/* Show top 3 critical gaps */}
                 <HotSkillsWidget hotSkills={hotSkillsList} />

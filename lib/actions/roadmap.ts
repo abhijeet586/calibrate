@@ -25,6 +25,10 @@ export interface RoadmapItem {
 }
 
 export async function getStudentRoadmap(studentId: string, currentRoleId?: string | null) {
+    if (!currentRoleId) {
+        return [];
+    }
+
     const supabase = await createClient();
 
     try {

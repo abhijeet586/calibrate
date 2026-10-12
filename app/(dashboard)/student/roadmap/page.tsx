@@ -1,9 +1,10 @@
 import React from 'react';
+import Link from 'next/link';
 import RoadmapClient from './RoadmapClient';
 import { getStudentRoadmap } from '@/lib/actions/roadmap';
 import { getUserId } from '@/lib/actions/userId';
 import { getStudentCurrentRole, getAllRolesForStudent } from '@/lib/actions/student';
-import { Target, Lightbulb } from 'lucide-react';
+import { Target, Lightbulb, Compass, ArrowRight } from 'lucide-react';
 
 export const dynamic = "force-dynamic";
 
@@ -40,7 +41,49 @@ export default async function RoadmapPage() {
         );
     }
 
-    // 4. Handle Empty State
+    // 4A. Student hasn't selected a career track yet
+    if (!currentRoleId) {
+        return (
+            <div className="min-h-screen bg-[#0A0A0A] text-white py-10 px-4 md:px-8 font-sans">
+                <div className="max-w-4xl mx-auto">
+                    <header className="mb-12">
+                        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-6">
+                            <div>
+                                <h1 className="text-3xl font-bold text-white mb-2">My Roadmap</h1>
+                                <p className="text-sm text-zinc-400 max-w-lg">
+                                    Personalized Cloud Engineering Curriculum
+                                </p>
+                            </div>
+                        </div>
+                    </header>
+
+                    <div className="border border-zinc-800/60 bg-[#121212]/70 rounded-2xl p-12 text-center flex flex-col items-center justify-center max-w-2xl mx-auto relative overflow-hidden shadow-2xl">
+                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-72 h-72 bg-cyan-500/10 rounded-full blur-[90px] pointer-events-none" />
+
+                        <div className="w-16 h-16 bg-zinc-900 border border-zinc-800 rounded-2xl flex items-center justify-center mb-6 shadow-[0_0_20px_rgba(6,182,212,0.15)]">
+                            <Compass className="w-8 h-8 text-cyan-400" />
+                        </div>
+
+                        <h3 className="text-2xl font-bold text-white mb-3 tracking-tight">Select Your Career Track</h3>
+
+                        <p className="text-zinc-400 text-sm max-w-md leading-relaxed mb-8">
+                            You haven't chosen a specialization track yet. Select from our available industry tracks (Cloud Solutions Architect, DevOps & Platform Engineer, or Full-Stack Cloud Engineer) to unlock your verified proof-of-work milestones.
+                        </p>
+
+                        <Link
+                            href="/student/roles"
+                            className="px-6 py-3 bg-cyan-500 hover:bg-cyan-400 text-black font-semibold rounded-xl shadow-[0_0_20px_rgba(6,182,212,0.3)] transition-all flex items-center gap-2 text-sm group"
+                        >
+                            <span>Explore Career Tracks</span>
+                            <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+                        </Link>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    // 4B. Handle Empty State when role selected but no items configured
     if (!items || items.length === 0) {
         return (
             <div className="min-h-screen bg-[#0A0A0A] text-white py-10 px-4 md:px-8 font-sans">
