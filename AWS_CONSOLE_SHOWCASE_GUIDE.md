@@ -128,9 +128,9 @@ Open these **6 tabs** in your browser before your professor calls your team:
      > *"Here is our operational telemetry. Every evidence lifecycle event is logged as structured JSON in CloudWatch for audit compliance and security monitoring."*
 3. **Switch to Amazon SNS Console (Tab 5)**:
    - Go to **Topics** → Click **`calibrate-mentor-alerts`**.
-   - Show the Topic ARN: `arn:aws:sns:ap-southeast-2:...:calibrate-mentor-alerts`.
+   - Show the Topic ARN: `arn:aws:sns:ap-southeast-2:398021157144:calibrate-mentor-alerts`.
    - **What to say**:
-     > *"We decouple notifications using Amazon SNS. When a deliverable is uploaded, an alert event is published to this topic asynchronously, alerting mentor queues without blocking the student's browser response."*
+     > *"We decouple notifications using Amazon SNS. When a student uploads a deliverable, an alert event is published to this topic asynchronously, alerting mentor review queues and email subscribers without blocking the student's browser response."*
 
 ---
 

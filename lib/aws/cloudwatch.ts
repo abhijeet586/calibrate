@@ -31,15 +31,43 @@ export interface TelemetryEvent {
  */
 export async function logCloudWatchEvent(eventName: string, details: Record<string, any>) {
     const timestamp = Date.now();
-    const logMessage = JSON.stringify({
+    const logPayload = {
         timestamp: new Date(timestamp).toISOString(),
         event: eventName,
         platform: "calibrate-cloud",
         logGroup: logGroupName,
         ...details,
-    });
+    };
+    const logMessage = JSON.stringify(logPayload);
 
     console.log(`[AWS CloudWatch] ${eventName}:`, logMessage);
+
+    if (accessKeyId && secretAccessKey) {
+        try {
+            const streamName = `audit-${new Date().toISOString().slice(0, 10)}`;
+            try {
+                await cwLogsClient.send(new CreateLogStreamCommand({
+                    logGroupName,
+                    logStreamName: streamName,
+                }));
+            } catch {
+                // Stream already exists
+            }
+
+            await cwLogsClient.send(new PutLogEventsCommand({
+                logGroupName,
+                logStreamName: streamName,
+                logEvents: [
+                    {
+                        timestamp,
+                        message: logMessage,
+                    },
+                ],
+            }));
+        } catch (cwErr) {
+            console.warn("[AWS CloudWatch Write Warning]:", cwErr);
+        }
+    }
 }
 
 /**
@@ -86,7 +114,7 @@ export async function getRecentTelemetryEvents(): Promise<TelemetryEvent[]> {
                 timestamp: sub.created_at,
                 event: "SNS_ALERT_DISPATCHED",
                 service: "Amazon SNS",
-                logGroup: "arn:aws:sns:ap-southeast-2:calibrate-mentor-alerts",
+                logGroup: "arn:aws:sns:ap-southeast-2:398021157144:calibrate-mentor-alerts",
                 details: {
                     topic: "calibrate-mentor-alerts",
                     subject: `[Calibrate] New Proof Deliverable: ${sub.title}`,
