@@ -53,6 +53,22 @@ UPDATE public.users
 SET role = 'mentor', full_name = 'Dr. Sarah Mentor' 
 WHERE email = 'mentor@calibrate.edu';
 
+UPDATE public.profiles 
+SET role = 'mentor', full_name = 'Mentor Two' 
+WHERE email = 'mentor2@calibrate.edu';
+
+UPDATE public.users 
+SET role = 'mentor', full_name = 'Mentor Two' 
+WHERE email = 'mentor2@calibrate.edu';
+
+UPDATE public.profiles 
+SET role = 'mentor', full_name = 'Mentor Three' 
+WHERE email = 'mentor3@calibrate.edu';
+
+UPDATE public.users 
+SET role = 'mentor', full_name = 'Mentor Three' 
+WHERE email = 'mentor3@calibrate.edu';
+
 -- Set Admin Role
 UPDATE public.profiles 
 SET role = 'admin', full_name = 'CDC Administrator' 
