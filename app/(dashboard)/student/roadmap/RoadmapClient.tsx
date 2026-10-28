@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from 'react';
-import { CheckCircle2, Lock, AlertCircle, ArrowRight, RefreshCcw, PlayCircle, Loader2, Cloud, UploadCloud, Link as LinkIcon, FileText } from 'lucide-react';
+import { CheckCircle2, Lock, AlertCircle, ArrowRight, RefreshCcw, PlayCircle, Loader2, Cloud, UploadCloud, Link as LinkIcon, FileText, Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { RoadmapItem } from '@/lib/actions/roadmap';
 import { submitRoadmapProof } from '@/lib/actions/roadmap';
@@ -20,10 +20,10 @@ interface SkillCardProps {
 }
 
 // --- Status Mapping ---
-// DB progress statuses: 'pending' -> maps to UI 'actionable'
-// DB progress statuses: 'completed' -> maps to UI 'pending' (pending mentor review)
-// DB progress statuses: 'verified' -> maps to UI 'verified'
-// We will treat items with NO student_progress record as 'todo' or 'actionable' based on logic in the parent component.
+// DB progress statuses: 'pending' -> maps to UI 'pending' (pending mentor review)
+// DB progress statuses: 'rejected' -> maps to UI 'rejected' (needs revision, can resubmit)
+// DB progress statuses: 'verified' -> maps to UI 'verified' (completed)
+// Items with NO student_progress record map to 'actionable' (if unlocked) or 'todo' (if locked)
 function mapDBStatusToUI(
     progressRecord?: { status: string; proof_link: string | null; mentor_feedback: string | null },
     isActionable: boolean = false
@@ -32,19 +32,18 @@ function mapDBStatusToUI(
         return isActionable ? 'actionable' : 'todo';
     }
 
-    if (progressRecord.status === 'completed') {
-        return 'pending'; // UI status for "Under Review"
-    }
-
     if (progressRecord.status === 'verified') {
         return 'verified';
+    }
+
+    if (progressRecord.status === 'pending' || progressRecord.status === 'completed') {
+        return 'pending'; // UI status for "Under Review"
     }
 
     if (progressRecord.status === 'rejected') {
         return 'rejected';
     }
 
-    // If progress exists but is 'pending' in DB, or any other state
     return isActionable ? 'actionable' : 'todo';
 }
 
@@ -63,10 +62,10 @@ const SkillCard: React.FC<SkillCardProps> = ({
             title: "text-zinc-500",
             badge: null,
             icon: null,
-            button: "bg-zinc-800/40 text-zinc-500 border border-zinc-800/50 rounded-lg hover:bg-zinc-800/60 hover:text-zinc-300",
-            buttonIcon: <PlayCircle className="w-4 h-4 ml-2 opacity-50" />,
-            buttonText: "Start",
-            disabled: false,
+            button: "bg-zinc-800/40 text-zinc-500 border border-zinc-800/50 rounded-lg cursor-not-allowed select-none",
+            buttonIcon: <Lock className="w-4 h-4 ml-2 opacity-50" />,
+            buttonText: "Locked",
+            disabled: true,
         },
         actionable: {
             wrapper: "border-zinc-800 bg-[#121212] hover:border-cyan-500/50 transition-colors",
@@ -83,10 +82,10 @@ const SkillCard: React.FC<SkillCardProps> = ({
             title: "text-zinc-100",
             badge: { text: "PENDING MENTOR REVIEW", classes: "text-[#d97706] border border-[#d97706]/30 bg-[#d97706]/10" },
             icon: null,
-            button: "bg-cyan-500 text-black hover:bg-cyan-400 font-semibold rounded-lg shadow-[0_0_15px_rgba(6,182,212,0.3)]",
-            buttonIcon: <ArrowRight className="w-4 h-4 ml-2" />,
-            buttonText: "Submit Claim",
-            disabled: false,
+            button: "bg-zinc-800/80 text-zinc-400 border border-zinc-700/50 rounded-lg cursor-not-allowed select-none",
+            buttonIcon: <Clock className="w-4 h-4 ml-2 text-amber-500/70" />,
+            buttonText: "Under Review",
+            disabled: true,
         },
         rejected: {
             wrapper: "border-red-500/30 bg-[#121212]",
@@ -200,11 +199,18 @@ export default function RoadmapClient({ items }: { items: RoadmapItem[] }) {
     const totalItems = items.length;
     const verifiedItems = items.filter(i =>
         i.student_progress && i.student_progress.length > 0 &&
-        i.student_progress[0].status === 'verified'
+        i.student_progress.some(p => p.status === 'verified')
     ).length;
     const progressPercentage = totalItems > 0 ? Math.round((verifiedItems / totalItems) * 100) : 0;
 
     const handleActionClick = (item: RoadmapItem) => {
+        const record = item.student_progress && item.student_progress.length > 0
+            ? (item.student_progress.find(p => p.status === 'verified') || item.student_progress[0])
+            : undefined;
+        // Do not open submission modal if item is pending mentor review or verified
+        if (record?.status === 'pending' || record?.status === 'verified') {
+            return;
+        }
         setSelectedItem(item);
         setProofUrl("");
         setSelectedFile(null);
@@ -254,7 +260,6 @@ export default function RoadmapClient({ items }: { items: RoadmapItem[] }) {
                     fileName: selectedFile.name,
                     fileType: selectedFile.type || "application/octet-stream",
                     fileSizeBytes: selectedFile.size,
-                    roadmapItemId: selectedItem.id,
                 });
 
                 await submitRoadmapProof(selectedItem.id, s3Url);
@@ -360,11 +365,13 @@ export default function RoadmapClient({ items }: { items: RoadmapItem[] }) {
                                                 // An item is actionable if it's the first unverified item in the phase,
                                                 // or if all items before it are verified.
                                                 const allPreviousVerified = phaseItems.slice(0, itemIndex).every(i =>
-                                                    i.student_progress && i.student_progress.length > 0 && i.student_progress[0].status === 'verified'
+                                                    i.student_progress && i.student_progress.some(p => p.status === 'verified')
                                                 );
 
                                                 const isActionable = isPreviousPhaseVerified && allPreviousVerified;
-                                                const record = item.student_progress && item.student_progress.length > 0 ? item.student_progress[0] : undefined;
+                                                const record = item.student_progress && item.student_progress.length > 0
+                                                    ? (item.student_progress.find(p => p.status === 'verified') || item.student_progress[0])
+                                                    : undefined;
                                                 const uiStatus = mapDBStatusToUI(record, isActionable);
 
                                                 return (

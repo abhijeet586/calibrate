@@ -24,14 +24,30 @@ async function requireAdmin() {
         throw new Error("Unauthorized");
     }
 
-    const { data: userData, error: userError } = await supabase
-        .from("users")
+    // Check profiles first, fallback to users or user_metadata
+    const { data: profile } = await supabase
+        .from("profiles")
         .select("role")
         .eq("id", user.id)
-        .single();
+        .maybeSingle();
 
-    if (userError || !['admin', 'cdc_admin'].includes(userData?.role)) {
-        throw new Error("Forbidden: Admin access required (role: " + userData?.role + ")");
+    let userRole = profile?.role;
+
+    if (!userRole) {
+        const { data: userData } = await supabase
+            .from("users")
+            .select("role")
+            .eq("id", user.id)
+            .maybeSingle();
+        userRole = userData?.role;
+    }
+
+    if (!userRole) {
+        userRole = (user.user_metadata as any)?.role;
+    }
+
+    if (!['admin', 'cdc_admin'].includes(userRole)) {
+        throw new Error("Forbidden: Admin access required (role: " + userRole + ")");
     }
 
     return user;
@@ -295,88 +311,106 @@ export interface AdminCurriculumItem {
     } | null;
 }
 
-export async function createRoadmapItem(formData: FormData) {
-    const supabase = await createClient();
-    await requireAdmin();
+export type CreateRoadmapItemResult =
+    | { success: true; item: AdminCurriculumItem }
+    | { success: false; error: string };
 
-    const target_role_id = formData.get("target_role_id") as string;
-    const task_instruction = formData.get("task_instruction") as string;
-    const resource_link = formData.get("resource_link") as string;
-    const skill_name = formData.get("skill_name") as string;
+export async function createRoadmapItem(formData: FormData): Promise<CreateRoadmapItemResult> {
+    try {
+        const supabase = await createClient();
+        await requireAdmin();
 
-    if (!target_role_id || !task_instruction || !skill_name) {
-        throw new Error("Missing required fields: target_role_id, task_instruction, or skill_name");
-    }
+        const target_role_id = formData.get("target_role_id") as string;
+        const task_instruction = formData.get("task_instruction") as string;
+        const resource_link = formData.get("resource_link") as string;
+        const skill_name = formData.get("skill_name") as string;
 
-    // 1. Normalize the skill name
-    const normalizedName = skill_name.trim();
+        if (!target_role_id || !task_instruction || !skill_name) {
+            return { success: false, error: "Missing required fields: target_role_id, task_instruction, or skill_name" };
+        }
 
-    // 2. Check if skill exists (case-insensitive)
-    let finalSkillId: string | null = null;
+        // 1. Normalize the skill name
+        const normalizedName = skill_name.trim();
 
-    const { data: existingSkill } = await supabase
-        .from("market_skills")
-        .select("id")
-        .ilike("name", normalizedName)
-        .single();
+        // 2. Check if skill exists (case-insensitive)
+        let finalSkillId: string | null = null;
 
-    if (existingSkill) {
-        finalSkillId = existingSkill.id;
-    } else {
-        // 3. Insert new skill if not found
-        const { data: newSkill, error: skillError } = await supabase
+        const { data: existingSkill, error: skillFetchError } = await supabase
             .from("market_skills")
-            .insert({
-                name: normalizedName,
-                // Assign some default verified/mentions if needed, 
-                // but usually just name is enough for the schema
-            })
             .select("id")
+            .ilike("name", normalizedName)
+            .maybeSingle();
+
+        if (skillFetchError) {
+            console.error("Error fetching market skill:", skillFetchError);
+        }
+
+        if (existingSkill) {
+            finalSkillId = existingSkill.id;
+        } else {
+            // 3. Insert new skill if not found
+            const { data: newSkill, error: skillError } = await supabase
+                .from("market_skills")
+                .insert({
+                    name: normalizedName,
+                    category: "Cloud & DevOps",
+                })
+                .select("id")
+                .single();
+
+            if (skillError) {
+                console.error("Error creating new market skill:", skillError);
+                return { success: false, error: `Failed to create new skill: ${skillError.message}` };
+            }
+            finalSkillId = newSkill.id;
+        }
+
+        // 4. Insert Roadmap Item with the resolved skill ID
+        const { data: newItem, error: itemError } = await supabase
+            .from("roadmap_items")
+            .insert({
+                target_role_id,
+                instruction: task_instruction,
+                resource_link: resource_link || null,
+                skill_id: finalSkillId,
+            })
+            .select(`
+                id,
+                target_role_id,
+                instruction,
+                resource_link,
+                skill_id,
+                created_at,
+                market_skills (
+                    name
+                )
+            `)
             .single();
 
-        if (skillError) {
-            console.error("Error creating new market skill:", skillError);
-            throw new Error(`Failed to create new skill: ${skillError.message}`);
+        if (itemError) {
+            console.error("Error creating roadmap item:", itemError);
+            return { success: false, error: `Database error: ${itemError.message}` };
         }
-        finalSkillId = newSkill.id;
+
+        revalidatePath("/admin/track-ops");
+        revalidatePath("/student/roadmap");
+
+        // Format the returned item to match the UI component's interface
+        const formattedItem: AdminCurriculumItem = {
+            id: newItem.id,
+            target_role_id: newItem.target_role_id,
+            task_instruction: newItem.instruction,
+            resource_link: newItem.resource_link,
+            skill_id: newItem.skill_id,
+            created_at: newItem.created_at,
+            market_skills: Array.isArray(newItem.market_skills) ? newItem.market_skills[0] : newItem.market_skills
+        };
+
+        return { success: true, item: formattedItem };
+    } catch (err: any) {
+        console.error("Unexpected error in createRoadmapItem:", err);
+        return { success: false, error: err?.message || "An unexpected error occurred while saving the task" };
     }
-
-    // 4. Insert Roadmap Item with the resolved skill ID
-    const { data: newItem, error: itemError } = await supabase
-        .from("roadmap_items")
-        .insert({
-            target_role_id,
-            task_instruction,
-            resource_link: resource_link || null,
-            skill_id: finalSkillId,
-            is_verified_task: true,
-        })
-        .select(`
-            id,
-            target_role_id,
-            task_instruction,
-            resource_link,
-            skill_id,
-            created_at,
-            market_skills!roadmap_items_skill_id_fkey(
-                name
-            )
-        `)
-        .single();
-
-    if (itemError) {
-        console.error("Error creating roadmap item:", itemError);
-        throw new Error(itemError.message);
-    }
-
-    revalidatePath("/admin/track-ops");
-    revalidatePath("/student/roadmap");
-
-    // Format the returned item to match the UI component's interface
-    return {
-        ...newItem,
-        market_skills: Array.isArray(newItem.market_skills) ? newItem.market_skills[0] : newItem.market_skills
-    } as AdminCurriculumItem;
 }
 
 export async function getAdminCurriculumItems(targetRoleId: string) {
@@ -390,12 +424,12 @@ export async function getAdminCurriculumItems(targetRoleId: string) {
         .select(`
             id,
             target_role_id,
-            task_instruction,
+            instruction,
             resource_link,
             skill_id,
             created_at,
             market_skills(name)
-        `) // removed the strict !fkey name to let Supabase auto-resolve
+        `)
         .eq("target_role_id", targetRoleId)
         .order("created_at", { ascending: true });
 
@@ -407,7 +441,12 @@ export async function getAdminCurriculumItems(targetRoleId: string) {
     console.log(`✅ Success: Found ${data?.length || 0} items in DB`);
 
     return (data || []).map((item: any) => ({
-        ...item,
+        id: item.id,
+        target_role_id: item.target_role_id,
+        task_instruction: item.instruction,
+        resource_link: item.resource_link,
+        skill_id: item.skill_id,
+        created_at: item.created_at,
         market_skills: Array.isArray(item.market_skills) ? item.market_skills[0] : item.market_skills
     })) as AdminCurriculumItem[];
 }

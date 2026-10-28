@@ -70,9 +70,10 @@ export async function getStudentRoadmap(studentId: string, currentRoleId?: strin
         const itemIds = items.map((i: any) => i.id);
         const { data: progressList } = await supabase
             .from("student_progress")
-            .select("id, roadmap_item_id, status, proof_link, mentor_feedback")
+            .select("id, roadmap_item_id, status, proof_link, mentor_feedback, created_at, updated_at")
             .eq("student_id", studentId)
-            .in("roadmap_item_id", itemIds);
+            .in("roadmap_item_id", itemIds)
+            .order("created_at", { ascending: false });
 
         const progressMap = new Map<string, any[]>();
         (progressList || []).forEach((p: any) => {
@@ -81,6 +82,17 @@ export async function getStudentRoadmap(studentId: string, currentRoleId?: strin
             }
             progressMap.get(p.roadmap_item_id)!.push(p);
         });
+
+        // Ensure each item's progress list has verified first, or latest updated/created first
+        for (const list of progressMap.values()) {
+            list.sort((a, b) => {
+                if (a.status === 'verified') return -1;
+                if (b.status === 'verified') return 1;
+                const timeA = new Date(a.updated_at || a.created_at || 0).getTime();
+                const timeB = new Date(b.updated_at || b.created_at || 0).getTime();
+                return timeB - timeA;
+            });
+        }
 
         // Map into RoadmapItem structure for RoadmapClient
         const mappedData: RoadmapItem[] = items.map((item: any) => {
@@ -129,27 +141,45 @@ export async function submitRoadmapProof(roadmapItemId: string, proofUrl: string
         throw new Error("Invalid roadmap item");
     }
 
-    const skill_id = roadmapItem.skill_id;
-
-    // 2. Check for existing progress
-    const { data: existingProgress } = await supabase
+    // 2. Fetch all existing progress records for this student and roadmap item
+    const { data: existingRows, error: fetchErr } = await supabase
         .from("student_progress")
-        .select("id")
+        .select("id, created_at")
         .eq("student_id", user.id)
         .eq("roadmap_item_id", roadmapItemId)
-        .maybeSingle();
+        .order("created_at", { ascending: false });
 
-    if (existingProgress) {
-        // Update existing row to pending with the proof link
+    if (fetchErr) {
+        console.error("Error fetching existing progress:", fetchErr);
+    }
+
+    if (existingRows && existingRows.length > 0) {
+        const primaryId = existingRows[0].id;
+        // Update existing row to pending with the proof link, resetting feedback
         const { error } = await supabase
             .from("student_progress")
-            .update({ status: "pending", proof_link: proofUrl })
-            .eq("id", existingProgress.id);
+            .update({
+                status: "pending",
+                proof_link: proofUrl,
+                mentor_feedback: null,
+                updated_at: new Date().toISOString(),
+            })
+            .eq("id", primaryId);
+
         if (error) {
             console.error("❌ SUPABASE UPDATE ERROR (student_progress):", error);
             throw new Error(error.message);
         } else {
             console.log("✅ UPDATE SUCCESSFUL");
+        }
+
+        // Clean up any historical duplicate rows if they exist
+        if (existingRows.length > 1) {
+            const duplicateIds = existingRows.slice(1).map(r => r.id);
+            await supabase
+                .from("student_progress")
+                .delete()
+                .in("id", duplicateIds);
         }
     } else {
         // Insert new row as pending
@@ -171,6 +201,8 @@ export async function submitRoadmapProof(roadmapItemId: string, proofUrl: string
     }
 
     revalidatePath("/student/roadmap");
-    revalidatePath("/dashboard");
+    revalidatePath("/student/progress");
+    revalidatePath("/mentor/verify");
     revalidatePath("/mentor");
+    revalidatePath("/dashboard");
 }

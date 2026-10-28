@@ -105,12 +105,39 @@ export async function submitEvidenceRecord({
     // 2. If tied to a roadmap milestone, record in student_progress
     if (roadmapItemId) {
         const s3PublicUrl = `https://${bucketName}.s3.${region}.amazonaws.com/${s3Key}`;
-        await supabase.from("student_progress").insert({
-            student_id: user.id,
-            roadmap_item_id: roadmapItemId,
-            proof_link: s3PublicUrl,
-            status: "pending",
-        });
+        const { data: existingRows } = await supabase
+            .from("student_progress")
+            .select("id")
+            .eq("student_id", user.id)
+            .eq("roadmap_item_id", roadmapItemId)
+            .order("created_at", { ascending: false });
+
+        if (existingRows && existingRows.length > 0) {
+            await supabase
+                .from("student_progress")
+                .update({
+                    status: "pending",
+                    proof_link: s3PublicUrl,
+                    mentor_feedback: null,
+                    updated_at: new Date().toISOString(),
+                })
+                .eq("id", existingRows[0].id);
+
+            if (existingRows.length > 1) {
+                const duplicateIds = existingRows.slice(1).map(r => r.id);
+                await supabase
+                    .from("student_progress")
+                    .delete()
+                    .in("id", duplicateIds);
+            }
+        } else {
+            await supabase.from("student_progress").insert({
+                student_id: user.id,
+                roadmap_item_id: roadmapItemId,
+                proof_link: s3PublicUrl,
+                status: "pending",
+            });
+        }
     }
 
     // 3. Dispatch Amazon SNS Alert

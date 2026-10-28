@@ -44,16 +44,20 @@ export default function AdminCurriculumClient({ tracks, skills }: Props) {
         setIsSubmitting(true);
         setError(null);
         try {
-            const newItem = await createRoadmapItem(formData);
+            const res = await createRoadmapItem(formData);
+            if (!res.success) {
+                setError(res.error);
+                return;
+            }
 
             // Immediately append to local state
-            setItems((prev) => [...prev, newItem]);
+            setItems((prev) => [...prev, res.item]);
 
             // Force Next.js router to refresh and reflect new changes in background
             router.refresh();
 
             // Reset form
-            (document.getElementById("add-task-form") as HTMLFormElement).reset();
+            (document.getElementById("add-task-form") as HTMLFormElement)?.reset();
         } catch (err: any) {
             setError(err.message || "Failed to create task");
             console.error(err);

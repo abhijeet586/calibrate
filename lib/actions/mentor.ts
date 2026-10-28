@@ -55,7 +55,16 @@ export async function getPendingVerifications() {
 
     if (!data || data.length === 0) return [];
 
-    const studentIds = [...new Set(data.map((r: any) => r.student_id).filter(Boolean))];
+    // Deduplicate any rows for same student + roadmap item
+    const seen = new Set<string>();
+    const uniqueData = data.filter((row: any) => {
+        const key = `${row.student_id}_${row.roadmap_items?.id || row.id}`;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+    });
+
+    const studentIds = [...new Set(uniqueData.map((r: any) => r.student_id).filter(Boolean))];
     let profileMap: Record<string, string> = {};
     if (studentIds.length > 0) {
         const { data: profiles } = await supabase
@@ -67,7 +76,7 @@ export async function getPendingVerifications() {
         }
     }
 
-    return data.map((item: any) => ({
+    return uniqueData.map((item: any) => ({
         ...item,
         users: { full_name: profileMap[item.student_id] || "Student" }
     }));
@@ -99,7 +108,15 @@ export async function getPendingRoadmapTasks() {
 
     if (!data || data.length === 0) return [];
 
-    const studentIds = [...new Set(data.map((r: any) => r.student_id).filter(Boolean))];
+    const seen = new Set<string>();
+    const uniqueData = data.filter((row: any) => {
+        const key = `${row.student_id}_${row.roadmap_item_id}`;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+    });
+
+    const studentIds = [...new Set(uniqueData.map((r: any) => r.student_id).filter(Boolean))];
     let profileMap: Record<string, string> = {};
     if (studentIds.length > 0) {
         const { data: profiles } = await supabase
@@ -199,6 +216,12 @@ export async function resolveRoadmapTask(progressId: string, newStatus: 'verifie
         throw new Error("Unauthorized");
     }
 
+    const { data: targetSubmission } = await supabase
+        .from("student_progress")
+        .select("id, student_id, roadmap_item_id")
+        .eq("id", progressId)
+        .maybeSingle();
+
     // Update student_progress status and mentor feedback.
     // The DB trigger `grant_skill_on_verification` handles inserting into student_skills automatically.
     const { error: updateError } = await supabase
@@ -206,6 +229,7 @@ export async function resolveRoadmapTask(progressId: string, newStatus: 'verifie
         .update({
             status: newStatus,
             mentor_feedback: comment,
+            updated_at: new Date().toISOString(),
         })
         .eq("id", progressId);
 
@@ -214,8 +238,20 @@ export async function resolveRoadmapTask(progressId: string, newStatus: 'verifie
         throw new Error(updateError.message);
     }
 
+    if (targetSubmission?.student_id && targetSubmission?.roadmap_item_id) {
+        await supabase
+            .from("student_progress")
+            .delete()
+            .eq("student_id", targetSubmission.student_id)
+            .eq("roadmap_item_id", targetSubmission.roadmap_item_id)
+            .neq("id", progressId);
+    }
+
     revalidatePath("/student/roadmap");
+    revalidatePath("/student/progress");
+    revalidatePath("/mentor/verify");
     revalidatePath("/mentor");
+    revalidatePath("/dashboard");
 }
 
 // =============================================================================
@@ -267,7 +303,17 @@ export async function getVerifySkillsQueue(): Promise<VerifySubmission[]> {
 
     if (!data || data.length === 0) return [];
 
-    const studentIds = [...new Set(data.map((r: any) => r.student_id).filter(Boolean))];
+    // Deduplicate any rows for same student + roadmap item
+    const seen = new Set<string>();
+    const uniqueData = (data || []).filter((row: any) => {
+        const ri = Array.isArray(row.roadmap_items) ? row.roadmap_items[0] : row.roadmap_items;
+        const key = `${row.student_id}_${row.roadmap_item_id || ri?.instruction}`;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+    });
+
+    const studentIds = [...new Set(uniqueData.map((r: any) => r.student_id).filter(Boolean))];
     let profileMap: Record<string, string> = {};
     if (studentIds.length > 0) {
         const { data: profiles } = await supabase
@@ -279,7 +325,7 @@ export async function getVerifySkillsQueue(): Promise<VerifySubmission[]> {
         }
     }
 
-    return (data || []).map((row: any) => {
+    return uniqueData.map((row: any) => {
         const fullName: string = profileMap[row.student_id] || "Student";
         const initials = fullName
             .split(" ")
@@ -329,18 +375,36 @@ export async function approveSubmission(progressId: string, studentId: string, s
         throw new Error("Unauthorized");
     }
 
+    // Fetch the target submission to find roadmap_item_id
+    const { data: targetSubmission } = await supabase
+        .from("student_progress")
+        .select("id, student_id, roadmap_item_id")
+        .eq("id", progressId)
+        .maybeSingle();
+
     // 1. Update student_progress status to 'verified'
     const { error: updateError } = await supabase
         .from("student_progress")
         .update({
             status: "verified",
             mentor_feedback: "Approved by mentor.",
+            updated_at: new Date().toISOString(),
         })
         .eq("id", progressId);
 
     if (updateError) {
         console.error("approveSubmission update error:", updateError);
         throw new Error(updateError.message);
+    }
+
+    // Clean up any other duplicate rows for this student & task
+    if (targetSubmission?.student_id && targetSubmission?.roadmap_item_id) {
+        await supabase
+            .from("student_progress")
+            .delete()
+            .eq("student_id", targetSubmission.student_id)
+            .eq("roadmap_item_id", targetSubmission.roadmap_item_id)
+            .neq("id", progressId);
     }
 
     // 2. Upsert student_skills (safety net alongside the DB trigger)
@@ -370,8 +434,10 @@ export async function approveSubmission(progressId: string, studentId: string, s
     }
 
     revalidatePath("/mentor/verify");
-    revalidatePath("/dashboard");
+    revalidatePath("/mentor");
     revalidatePath("/student/roadmap");
+    revalidatePath("/student/progress");
+    revalidatePath("/dashboard");
 }
 
 /**
@@ -385,18 +451,55 @@ export async function rejectSubmission(progressId: string, feedback?: string) {
         throw new Error("Unauthorized");
     }
 
-    const { error: updateError } = await supabase
+    const { data: targetSubmission } = await supabase
         .from("student_progress")
-        .update({
-            status: "rejected",
-            mentor_feedback: feedback || "Rejected by mentor.",
-        })
-        .eq("id", progressId);
+        .select("id, student_id, roadmap_item_id")
+        .eq("id", progressId)
+        .maybeSingle();
 
-    if (updateError) {
-        console.error("rejectSubmission update error:", updateError);
-        throw new Error(updateError.message);
+    const rejectionComment = feedback || "Rejected by mentor. Please revise and resubmit.";
+
+    if (targetSubmission?.student_id && targetSubmission?.roadmap_item_id) {
+        const { error: updateError } = await supabase
+            .from("student_progress")
+            .update({
+                status: "rejected",
+                mentor_feedback: rejectionComment,
+                updated_at: new Date().toISOString(),
+            })
+            .eq("id", targetSubmission.id);
+
+        if (updateError) {
+            console.error("rejectSubmission update error:", updateError);
+            throw new Error(updateError.message);
+        }
+
+        // Clean up any remaining duplicate rows for this student & task
+        await supabase
+            .from("student_progress")
+            .delete()
+            .eq("student_id", targetSubmission.student_id)
+            .eq("roadmap_item_id", targetSubmission.roadmap_item_id)
+            .neq("id", targetSubmission.id);
+    } else {
+        const { error: updateError } = await supabase
+            .from("student_progress")
+            .update({
+                status: "rejected",
+                mentor_feedback: rejectionComment,
+                updated_at: new Date().toISOString(),
+            })
+            .eq("id", progressId);
+
+        if (updateError) {
+            console.error("rejectSubmission update error:", updateError);
+            throw new Error(updateError.message);
+        }
     }
 
     revalidatePath("/mentor/verify");
+    revalidatePath("/mentor");
+    revalidatePath("/student/roadmap");
+    revalidatePath("/student/progress");
+    revalidatePath("/dashboard");
 }
